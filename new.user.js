@@ -1,619 +1,50 @@
 // ==UserScript==
-// @name         中兴路由器(ZTE) 增强【读档版】
-// @version      5.8.1.0
+// @name         中兴路由器(ZTE) 增强
+// @name:en      ZTE-Stat_Max
+// @namespace    http://tampermonkey.net/
+// @version      5.8.9
 // @description  QQ群 680464365
 // @description:en https://github.com/ucxn/ZTE-Stat_Max
 // @author       哥哥科技
 // @noframes
-// @include      http://10.*
+// @include      /^https?:\/\/10(\.[0-9]{1,3}){3}(:\d+)?\/.*$/
 // @match        http://192.168.5.1
-// @match        http://zte.home*
+// @include      http://192.168.*
+// @include      https://192.168.*
+// @include      http://172.16.*
+// @include      http://zte.home*
 // @grant        none
+// @updateURL    https://update.greasyfork.org/scripts/576199/%E4%B8%AD%E5%85%B4%E8%B7%AF%E7%94%B1%E5%99%A8%28ZTE%29%20%E5%A2%9E%E5%BC%BA.meta.js
+// @downloadURL  https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
 // @license      GPL-3.0-or-later
+
 // ==/UserScript==
 
 (function() {
-    'use strict';
-
-    function escapeHTML(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>'"]/g, function(match) {
-            return {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[match];
-        });
-    }
-
-    // ======== [0] 用户极客环境变量配置区 ========
-    const CONFIG = {
-        routerIP: "192.168.5.1", // 路由器内网 IP，用于防断线保活模块的后台寻址
-        calcMode: 1, // 1: 上行/下行倍数模式, 0: 上行占总和比例模式
-        ratioExtremeUp: 10,// 极端上传判定阈值 (> 1000%)
-        ratioWarnUp: 0.07,// 重度上传警告阈值 (> 7%)
-        ratioExtremeDown: 0.01, // 极端下载判定阈值 (< 1%)
-        ratioThreshold: 7, // (仅calcMode=0时有效) 上传占比报警阈值(%)
-        portMap: {
-            "eth1": "网口 1",
-            "eth2": "网口 2",
-            "eth3": "网口 3",
-            "eth4": "网口 4",
-            "wl0":  "2.4G",
-            "wl1":  "5.2G",
-            "wl2":  "5.8G"
-        }
-    };
-
-    const State = {
-        lastTime: 0,
-        wanUpSpeed: 0, wanDownSpeed: 0,
-        wanUpTraffic: 0, wanDownTraffic: 0,
-        clients: {}
-    };
-
-    let isFetching = false;
-    const parser = new DOMParser();
-
-    // ======== [1] 换算引擎 (1000进制 vs 1024进制) ========
-
-    function speedToBps(speedStr) {
-        if (!speedStr) return 0;
-        let match = speedStr.match(/([\d.]+)\s*(G|M|K)?bps/i);
-        if (!match) return 0;
-        let val = parseFloat(match[1]);
-        let unit = (match[2] || "").toUpperCase();
-        if (unit === 'G') return val * 1000000000;
-        if (unit === 'M') return val * 1000000;
-        if (unit === 'K') return val * 1000;
-        return val;
-    }
-
-    function formatBps(bps) {
-        if (bps >= 1000000) return (bps / 1000000).toFixed(3) + ' Mbps';
-        if (bps >= 1000) return (bps / 1000).toFixed(2) + ' Kbps';
-        return Math.round(bps) + ' bps';
-    }
-
-    function formatBytes(bps) {
-        let bytesPerSec = bps / 8;
-        if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(3) + ' MiB/s';
-        if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(2) + ' KiB/s';
-        return Math.round(bytesPerSec) + ' B/s';
-    }
-
-    function formatVolume(bits) {
-        let bytes = bits / 8;
-        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(3) + ' GiB';
-        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MiB';
-        if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KiB';
-        return Math.round(bytes) + ' B';
-    }
-
-    // 新增：双轨制流量锚定渲染 (强行将官方数据约束在我方单位下)
-    function formatVolumeDual(bitsIntegral, bitsOfficial) {
-        let bytes = bitsIntegral / 8;
-        let bytesOff = bitsOfficial / 8;
-        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(3) + ' | ' + (bytesOff / 1073741824).toFixed(4) + ' GiB';
-        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' | ' + (bytesOff / 1048576).toFixed(3) + ' MiB';
-        if (bytes >= 1024) return (bytes / 1024).toFixed(2) + ' | ' + (bytesOff / 1024).toFixed(1) + ' KiB';
-        return Math.round(bytes) + ' | ' + Math.round(bytesOff) + ' B';}
-
-    // 需求 2.2：区间流量单字母简写引擎 (放弃对齐换取空间)
-    function formatShortVolume(bits) {
-        let bytes = bits / 8;
-        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(3) + 'G';
-        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + 'M';
-        if (bytes >= 1024) return (bytes / 1024).toFixed(1) + 'K';
-        return Math.round(bytes) + 'B';
-    }
-
-    // 核心修复点 1：使用相邻节点配对遍历，防范因缺少 ParaValue 标签导致的数组下标错位错乱
-    function normalizeMac(mac) {
-        if (!mac) return '';
-        return mac.toLowerCase().replace(/-/g, ':').replace(/\s/g, '');
-    }
-
-    function parseInstance(instanceNode) {
-        let obj = Object.create(null); // 防止原型链污染
-        let children = instanceNode.children;
-        for (let i = 0; i < children.length; i++) {
-            if (children[i].tagName === "ParaName") {
-                let key = children[i].textContent;
-                let val = "";
-                let j = i + 1;
-                while (j < children.length && children[j].tagName !== "ParaName") {
-                    if (children[j].tagName === "ParaValue") {
-                        val = children[j].textContent;
-                        i = j; // 游标直接跳跃到值的位置，提升遍历性能
-                        break;
-                    }
-                    j++;
-                }
-                obj[key] = val;
-            }
-        }
-        return obj;
-    }
-
-    // ======== [2] 注入极客 CSS (实现 PS 级的底部对齐) ========
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-        /* 清除浮动，启用 Flex 布局控制 */
-        .config-item { clear: both; }
-        .config-item-box { display: flex !important; align-items: stretch !important; padding-bottom: 12px !important; }
-
-        /* 列分配与对齐 */
-        .config-item .logo { width: 33% !important; float: none !important; display: flex !important; flex-direction: row; }
-        .config-item .dev-intro { flex: 1; display: flex !important; flex-direction: column; justify-content: flex-start; min-height: 100px; padding-bottom: 0 !important; margin-bottom: 0 !important; }
-
-        .config-item .info { width: 27% !important; float: none !important; display: flex !important; flex-direction: column; justify-content: flex-start; padding: 0 10px !important; border-right: 1px solid #eee; }
-        .config-item .speed { width: 40% !important; float: none !important; display: flex !important; flex-direction: column; justify-content: center; padding: 0 10px !important; }
-
-        .geek-row { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: 20px; }
-        .geek-label { width: 110px; color: #333; font-weight: bold; }
-        .geek-val-box { flex: 1; display: flex; gap: 15px; margin-left: 10px; }
-        .geek-fixed-width { display: inline-block; width: 120px; }
-        .geek-right-box { text-align: right; min-width: 220px; font-weight: bold; }
-
-        .c-up { color: #ff4c00; } /* 温和红 */
-        .c-down { color: #0059fa; } /* 标准蓝 */
-
-        /* 核心对齐法：推到底部 */
-        .gege-up-box, .gege-down-box { margin-top: auto !important; margin-bottom: 0 !important; width: 95%; }
-        .gege-ratio-box { margin-top: 10px; width: 95%; margin-bottom: 5px; }
-
-        /* 细条组件 */
-        .t-row { font-size: 12px; font-weight: bold; margin-bottom: 2px; display: flex; justify-content: space-between; font-family: Consolas; }
-        .zte-thin-bar { width: 100%; height: 3px; background: rgba(0,0,0,0.05); border-radius: 1.5px; overflow: hidden; }
-        .zte-thin-bar-inner { height: 100%; transition: width 0.5s ease-out; }
-        .zte-thin-bar-inner.up { background: #ff4c00; }
-        .zte-thin-bar-inner.down { background: #0059fa; }
-
-        /* 雷达条：左红右蓝 */
-        .gege-ratio-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
-        .gege-ratio-bar { width: 100%; height: 4px; background: #0059fa; border-radius: 2px; overflow: hidden; }
-        .gege-ratio-bar-inner { height: 100%; background: #ff4c00; transition: width 0.5s ease-out; }
-
-        /* 网速进度条 */
-        .zte-enhance-speed { display: flex; flex-direction: column; gap: 6px; width: 100%; font-family: Consolas; }
-        .zte-bar-wrap {
-            position: relative; width: 100%; border-radius: 4px; border: 1px solid;
-            font-size: 13px; font-weight: bold; overflow: hidden; padding: 3px 8px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 1; box-sizing: border-box;
-        }
-        .zte-bar-wrap span { font-size: inherit; font-weight: inherit; }
-        .zte-bar-up { color: #ff4c00; border-color: rgba(255, 76, 0, 0.3); }
-        .zte-bar-down { color: #0059fa; border-color: rgba(0, 89, 250, 0.3); }
-        .zte-bar-up::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; z-index: -1; background: rgba(255, 76, 0, 0.12); width: var(--p-up, 0%); transition: width 0.5s; }
-        .zte-bar-down::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; z-index: -1; background: rgba(0, 89, 250, 0.12); width: var(--p-down, 0%); transition: width 0.5s; }
-
-        /* 面板UI重构：消灭变色龙现象，复刻官方白底圆角灰相框 */
-        #config-list.gege-list-container {
-            background-color: #ffffff !important;
-            border-radius: 8px !important;
-            border: 1px solid #e0e0e0 !important;
-            padding: 20px 30px !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-            margin-top: 10px !important;
-        }
-
-        .gege-section { margin-bottom: 10px; }
-        .gege-section:last-child { margin-bottom: 0; }
-
-        .gege-list-container .config-title {
-            font-size: 16px !important;
-            font-weight: bold !important;
-            color: #333 !important;
-            margin: 15px 0 10px 0 !important;
-            padding-bottom: 5px !important;
-        }
-        .gege-list-container .gege-section:first-child .config-title {
-            margin-top: 0 !important;
-        }
-
-        .gege-empty-state {
-            color: #999 !important;
-            font-size: 14px !important;
-            padding: 0 0 15px 5px !important;
-            border-bottom: 1px solid #f0f0f0 !important;
-            margin-bottom: 5px !important;
-        }
-
-        /* 内部设备条目背景改透明，解决灰白相间的问题 */
-        .gege-list-item {
-            background-color: transparent !important;
-            border-bottom: 1px solid #f0f0f0 !important;
-            padding: 15px 10px !important;
-            margin-bottom: 0 !important;
-            border-radius: 0 !important;
-        }
-        .gege-list-item:last-child { border-bottom: none !important; }
-
-        /* 看板样式完美融入到白框内部 */
-        #zte-geek-board {
-            background-color: transparent !important;
-            border-left: 4px solid #0059fa !important;
-            border-radius: 0 !important;
-            padding: 5px 0 5px 15px !important;
-            margin: 10px 0 15px 0 !important;
-            box-shadow: none !important;
-            border-bottom: 1px solid #f0f0f0 !important;
-            font-size: 14px; display: flex; flex-direction: column; gap: 6px;
-            padding-bottom: 15px !important;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // ======== [3] 核心拉取引擎 (采样) ========
-
-    async function refreshSpeedData() {
-        if (isFetching) return;
-        isFetching = true;
-
-        try {
-            const timestamp = new Date().getTime();
-            const now = performance.now();
-
-            const [wanRes, clientRes] = await Promise.all([
-                fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${timestamp}`),
-                fetch(`/?_type=vueData&_tag=vue_client_data&_=${timestamp}`)
-            ]);
-
-            if (!wanRes.ok || !clientRes.ok) {
-                console.warn("[哥哥科技] API 请求异常，跳过本次积分更新", wanRes.status, clientRes.status);
-                return;}
-            // 如果路由器抽风返回了非 200 的状态码（比如掉线、重启），直接放弃这秒的更新，防止脏数据污染积分
-            const wanXml = parser.parseFromString(await wanRes.text(), "text/xml");
-            const clientXml = parser.parseFromString(await clientRes.text(), "text/xml");
-
-            let wanInfo = Object.create(null);
-            const basicInfoNode = wanXml.querySelector("OBJ_HOME_BASICINFO_ID Instance");
-            if (basicInfoNode) wanInfo = parseInstance(basicInfoNode);
-            let curWanUp = speedToBps(wanInfo.WANUpRate);
-            let curWanDown = speedToBps(wanInfo.WANDownRate);
-
-            let clientsInfo = Object.create(null);
-            let curSumUp = 0;
-            let curSumDown = 0;
-
-            const clientNodes = clientXml.querySelectorAll("OBJ_CLIENTS_ID Instance");
-            clientNodes.forEach(node => {
-                let dev = parseInstance(node);
-                if (dev.MACAddress) {
-                    let mac = normalizeMac(dev.MACAddress);
-                    let up = speedToBps(dev.UpRate);
-                    let down = speedToBps(dev.DownRate);
-                    // 同步捕获官方底层累积流量 (单位转为 bits 以统一基准)
-                    let upTp = parseFloat(dev.UpThroughput || 0) * 8000;
-                    let downTp = parseFloat(dev.DownThroughput || 0) * 8000;
-                    clientsInfo[mac] = { up: up, down: down, interface: dev.Interface || "", upTp: upTp, downTp: downTp };
-                    curSumUp += up;
-                    curSumDown += down;
-                }
-            });
-
-            // [Fix 2] MAC Fingerprint Logic: Replace simple count comparison
-            let currentMacFingerprint = Object.keys(clientsInfo).sort().join(',');
-            let overlay = document.getElementById('gege-global-overlay');
-            let oldMacFingerprint = overlay ? (overlay.getAttribute('data-mac-fingerprint') || '') : '';
-
-            // Trigger reload only when physical topology actually changes
-            if (overlay && overlay.style.display === 'block' && currentMacFingerprint !== oldMacFingerprint) {
-                console.log(`[Gege Tech] Network topology changed, hot reloading...`);
-                overlay.setAttribute('data-mac-fingerprint', currentMacFingerprint);
-                buildVirtualDOM(overlay);
-            }
-
-            // 梯形积分
-            if (State.lastTime !== 0) {
-                let dt = (now - State.lastTime) / 1000;
-                State.wanUpTraffic += ((State.wanUpSpeed + curWanUp) / 2) * dt;
-                State.wanDownTraffic += ((State.wanDownSpeed + curWanDown) / 2) * dt;
-                for (let mac in clientsInfo) {
-                    if (!State.clients[mac]) {
-                        State.clients[mac] = {
-                            upSpeed: 0, downSpeed: 0, upTraffic: 0, downTraffic: 0,
-                            // [Fix 1] Snapshot Mode: Initialize baseline to 0 to inherit router history
-                            upBaseline: 0, downBaseline: 0,
-                            lastUpTp: clientsInfo[mac].upTp, lastDownTp: clientsInfo[mac].downTp
-                        };
-                    }
-
-                    let cS = State.clients[mac];
-                    let cC = clientsInfo[mac];
-
-                    // 需求 2.3：负数基线防回流机制 (核心物理法则：只要当前值掉底，立刻吃掉区间差额转为负数基线)
-                    if (cC.upTp < cS.lastUpTp) {
-                        let intervalUp = cS.lastUpTp - cS.upBaseline;
-                        cS.upBaseline = cC.upTp - intervalUp;
-                    }
-                    if (cC.downTp < cS.lastDownTp) {
-                        let intervalDown = cS.lastDownTp - cS.downBaseline;
-                        cS.downBaseline = cC.downTp - intervalDown;
-                    }
-                    cS.lastUpTp = cC.upTp;
-                    cS.lastDownTp = cC.downTp;
-
-                    cS.upTraffic += ((cS.upSpeed + cC.up) / 2) * dt;
-                    cS.downTraffic += ((cS.downSpeed + cC.down) / 2) * dt;
-                    cS.upSpeed = cC.up; cS.downSpeed = cC.down;
-                }
-            }
-            State.lastTime = now;
-            State.wanUpSpeed = curWanUp; State.wanDownSpeed = curWanDown;
-
-            let lanUpVol = 0, lanDownVol = 0;
-            for (let mac in State.clients) {
-                lanUpVol += State.clients[mac].upTraffic; lanDownVol += State.clients[mac].downTraffic;
-            }
-
-            renderUI(curWanUp, curWanDown, curSumUp, curSumDown, lanUpVol, lanDownVol, clientsInfo);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            isFetching = false;
-        }
-    }
-
-    // ======== [4] 渲染层 (完美对齐逻辑) ========
-
-    function renderUI(wanUp, wanDown, sumUp, sumDown, lanUpVol, lanDownVol, clientsInfo) {
-        // [新增] 预先计算官方高精流量的全局统计值 (供后续所有计算做分母使用)
-        let totalIntUp = 0, totalIntDown = 0;
-        let totalAbsUp = 0, totalAbsDown = 0;
-        for (let m in clientsInfo) {
-            let cC = clientsInfo[m];
-            let cState = State.clients[m];
-            let baseU = cState ? (cState.upBaseline || 0) : 0;
-            let baseD = cState ? (cState.downBaseline || 0) : 0;
-            totalIntUp += Math.max(0, (cC.upTp || 0) - baseU);
-            totalIntDown += Math.max(0, (cC.downTp || 0) - baseD);
-            totalAbsUp += (cC.upTp || 0);
-            totalAbsDown += (cC.downTp || 0);
-        }
-
-        // 看板渲染
-        let main = document.querySelector('.el-table') || document.querySelector('.config-item')?.closest('div') || document.querySelector('.main-content');
-        if (main) {
-            let board = document.getElementById('zte-geek-board');
-            if (!board) {
-                board = document.createElement('div');
-                board.id = 'zte-geek-board';
-                board.innerHTML = `
-                    <div class="geek-row">
-                        <span class="geek-label">WAN口速率</span>
-                        <div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-wan-up-bps"></span><span class="c-down geek-fixed-width" id="gb-wan-down-bps"></span></div>
-                        <div class="geek-right-box"><span class="c-up" id="gb-wan-up-bytes"></span> | <span class="c-down" id="gb-wan-down-bytes"></span></div>
-                    </div>
-                    <div class="geek-row">
-                        <span class="geek-label">局域网代数和</span>
-                        <div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-lan-up-bps"></span><span class="c-down geek-fixed-width" id="gb-lan-down-bps"></span></div>
-                        <div class="geek-right-box">实时占比：<span class="c-up" id="gb-perc-up"></span> | <span class="c-down" id="gb-perc-down"></span></div>
-                    </div>
-                    <div class="geek-row">
-                        <span class="geek-label">LAN：</span>
-                        <div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-lan-up-vol"></span><span class="c-down geek-fixed-width" id="gb-lan-down-vol"></span></div>
-                        <div class="geek-right-box">WAN：<span class="c-up" id="gb-wan-up-vol"></span> | <span class="c-down" id="gb-wan-down-vol"></span></div>
-                    </div>
-                    <div class="geek-row">
-                        <span class="geek-label">高精流量统计 -></span>
-                        <div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-int-up-vol"></span><span class="c-down geek-fixed-width" id="gb-int-down-vol"></span></div>
-                        <div class="geek-right-box" style="color: #666;">当前总计：<span class="c-up" id="gb-abs-up-vol"></span> | <span class="c-down" id="gb-abs-down-vol"></span></div>
-                    </div>`;
-
-                // 核心修复点：将面板严丝合缝地插入到"有线设备"标题下方，消除外部插入导致的灰底断层
-                // 修复：优先在当前处于最顶层的环境（Overlay 优先，否则全局 Document）中寻找挂载点
-                let activeContainer = document.getElementById('gege-global-overlay');
-                if (!activeContainer || activeContainer.style.display === 'none') {
-                    activeContainer = document;} // 面板没开，以官方全局为主
-                let wiredTitle = Array.from(activeContainer.querySelectorAll('.config-title')).find(el => el.textContent.includes('有线设备'));
-                if (wiredTitle) {
-                    wiredTitle.parentNode.insertBefore(board, wiredTitle.nextSibling);
-                } else if (main) {
-                    main.parentNode.insertBefore(board, main);}
-            }
-            // [Fix 3] Scoped UI Updates: Use board.querySelector instead of global document
-            board.querySelector('#gb-wan-up-bps').textContent = `🔼 ${formatBps(wanUp)}`;
-            board.querySelector('#gb-wan-down-bps').textContent = `🔽 ${formatBps(wanDown)}`;
-            board.querySelector('#gb-wan-up-bytes').textContent = `🔼 ${formatBytes(wanUp)}`;
-            board.querySelector('#gb-wan-down-bytes').textContent = `🔽 ${formatBytes(wanDown)}`;
-            board.querySelector('#gb-lan-up-bps').textContent = `🔼 ${formatBps(sumUp)}`;
-            board.querySelector('#gb-lan-down-bps').textContent = `🔽 ${formatBps(sumDown)}`;
-            board.querySelector('#gb-perc-up').textContent = `🔼 ${wanUp>0?((sumUp/wanUp)*100).toFixed(1):0.0}%`;
-            board.querySelector('#gb-perc-down').textContent = `🔽 ${wanDown>0?((sumDown/wanDown)*100).toFixed(1):0.0}%`;
-            board.querySelector('#gb-lan-up-vol').textContent = `🔼 ${formatVolume(lanUpVol)}`;
-            board.querySelector('#gb-lan-down-vol').textContent = `🔽 ${formatVolume(lanDownVol)}`;
-            board.querySelector('#gb-wan-up-vol').textContent = `🔼 ${formatVolume(State.wanUpTraffic)}`;
-            board.querySelector('#gb-wan-down-vol').textContent = `🔽 ${formatVolume(State.wanDownTraffic)}`;
-            board.querySelector('#gb-int-up-vol').textContent = `🔼 ${formatVolume(totalIntUp)}`;
-            board.querySelector('#gb-int-down-vol').textContent = `🔽 ${formatVolume(totalIntDown)}`;
-            board.querySelector('#gb-abs-up-vol').textContent = `🔼 ${formatVolume(totalAbsUp)}`;
-            board.querySelector('#gb-abs-down-vol').textContent = `🔽 ${formatVolume(totalAbsDown)}`;
-        }
-
-        const deviceItems = document.querySelectorAll('.config-item');
-        deviceItems.forEach(item => {
-            // 1. 先尝试从 DOM 中抓取最真实的、实时的 MAC
-            let freshMac = null;
-            const macNodes = Array.from(item.querySelectorAll('.dev-number'));
-            const originalMacNode = macNodes.find(n => n.textContent.includes('MAC'));
-
-            if (originalMacNode) {
-                const macMatch = originalMacNode.textContent.match(/([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/);
-                if (macMatch) {
-                    // 抓到了！立刻用 Fix 1 的工具清洗它
-                    freshMac = normalizeMac(macMatch[0]);
-                }
-            }
-
-            // 2. 状态校验与更新
-            let cachedMac = item.getAttribute('data-gege-mac');
-            let finalMac = null;
-
-            if (freshMac) {
-                // 如果能抓到真实的 MAC，永远以真实 MAC 为准，并覆盖旧缓存
-                finalMac = freshMac;
-                if (cachedMac !== freshMac) {
-                    item.setAttribute('data-gege-mac', freshMac);
-                }
-            } else {
-                // 如果当前 DOM 抓不到真实 MAC（设备隐藏了或暂未加载）绝对不能信任旧的 data-gege-mac 缓存！必须清空它！
-                finalMac = null;
-                item.removeAttribute('data-gege-mac');
-            }
-
-            // 3. 终极断头台：一旦没拿到合法 MAC，立刻物理拔除旧 UI 元素（我们上一轮的共识）
-            if (!finalMac) {
-                item.querySelector('.gege-up-box')?.remove();
-                item.querySelector('.gege-ratio-box')?.remove();
-                item.querySelector('.gege-down-box')?.remove();
-                item.querySelector('.zte-enhance-speed')?.remove();
-                return; // 结束这个异常设备的渲染
-            }
-            // 桥接变量：把洗干净的 finalMac 交还给 mac，这样你后面的代码就全都不用改了！
-            let mac = finalMac;
-
-            const cCur = clientsInfo[mac] || { up: 0, down: 0, interface: "", upTp: 0, downTp: 0 };
-            const cS = State.clients[mac] || { upTraffic: 0, downTraffic: 0 };
-
-            // --- 左侧：注入上行流量 (启用双轨制锚定) ---
-            const devIntro = item.querySelector('.dev-intro');
-            if (devIntro) {
-                let box = devIntro.querySelector('.gege-up-box');
-                if (!box) {
-                    box = document.createElement('div'); box.className = 'gege-up-box';
-                    box.innerHTML = `<div class="t-row c-up"><span>↑ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner up"></div></div>`;
-                    devIntro.appendChild(box);
-                }
-                // 需求：分子为官方区间增量，分母为全网官方区间增量代数和 (匿名计算，防作用域污染)
-                let p = totalAbsUp > 0 ? ((cCur.upTp || 0) / totalAbsUp * 100).toFixed(1) : 0.0;
-                box.querySelector('.v-vol').textContent = formatVolumeDual(cS.upTraffic, cCur.upTp);
-                box.querySelector('.v-pct').textContent = p + '%';
-                box.querySelector('.zte-thin-bar-inner').style.width = Math.min(p, 100) + '%';
-            }
-
-            // --- 中间：注入雷达与下行流量 ---
-            const info = item.querySelector('.info');
-            if (info) {
-                Array.from(info.querySelectorAll('.dev-ip:not(.gege-box *)')).slice(1).forEach(n => { n.style.display = 'none'; });
-                info.querySelectorAll('.dev-number:not(.gege-box *)').forEach(n => { n.style.display = 'none'; });
-
-                let rBox = info.querySelector('.gege-ratio-box');
-                if (!rBox) {
-                    rBox = document.createElement('div'); rBox.className = 'gege-ratio-box';
-                    // 需求 2.2: 在左侧网口和右侧比例之间，嵌入区间流量显示区 (使用 Consolas 和黑线保证极客感)
-                    rBox.innerHTML = `<div class="gege-ratio-top"><span class="v-port"></span><span class="v-interval" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 12.5px; opacity: 0.75; letter-spacing: 0.5px;"><span class="c-up"></span><span style="color:#666; margin:0 3px;">，</span><span class="c-down"></span></span><span class="v-rt-pct"></span></div><div class="gege-ratio-bar"><div class="gege-ratio-bar-inner"></div></div>`;
-                    info.appendChild(rBox);
-                }
-
-                let intUp = Math.max(0, cCur.upTp - (cS.upBaseline || 0));
-                let intDown = Math.max(0, cCur.downTp - (cS.downBaseline || 0));
-                // 进度条比例 (严守旧版公式)
-                let totalV = intUp + intDown;
-                let barRatio = totalV > 0 ? (intUp / totalV * 100) : 0;
-
-                // P2P 雷达文本逻辑 (双模式适配)
-                let textContent = "";
-                let textColor = "#0059fa";
-
-                if (CONFIG.calcMode === 1) {
-                    let ratio = intDown > 0 ? (intUp / intDown) : (intUp > 0 ? Infinity : 0);
-                    if (ratio > CONFIG.ratioExtremeUp) {
-                        textColor = '#ff4c00';
-                        textContent = (ratio === Infinity ? '∞' : ratio.toFixed(2)) + '⚠️';
-                    } else if (ratio > CONFIG.ratioWarnUp) {
-                        textColor = '#ff4c00';
-                        textContent = (ratio * 100).toFixed(1) + '%';
-                    } else if (ratio >= CONFIG.ratioExtremeDown) {
-                        textColor = '#0059fa';
-                        textContent = (ratio * 100).toFixed(1) + '%';
-                    } else {
-                        textColor = '#0059fa';
-                        let revRatio = intUp > 0 ? (intDown / intUp) : (intDown > 0 ? Infinity : 0);
-                        textContent = (revRatio === Infinity ? '∞' : revRatio.toFixed(1)) + 'x';
-                    }
-                } else {
-                    textColor = barRatio > CONFIG.ratioThreshold ? '#ff4c00' : '#0059fa';
-                    textContent = barRatio.toFixed(1) + '%';
-                }
-
-                rBox.querySelector('.v-port').textContent = CONFIG.portMap[cCur.interface] || cCur.interface || "未知";
-
-                // 渲染区间流量 (用当前官方值减去你的神级负数基线)
-                rBox.querySelector('.v-interval .c-up').textContent = '' + formatShortVolume(intUp);
-                rBox.querySelector('.v-interval .c-down').textContent = '' + formatShortVolume(intDown);
-
-                let rtPct = rBox.querySelector('.v-rt-pct');
-                rtPct.textContent = textContent;
-                rtPct.style.color = textColor;
-                rBox.querySelector('.gege-ratio-bar-inner').style.width = Math.min(barRatio, 100) + '%';
-
-                let dBox = info.querySelector('.gege-down-box');
-                if (!dBox) {
-                    dBox = document.createElement('div'); dBox.className = 'gege-down-box';
-                    dBox.innerHTML = `<div class="t-row c-down"><span>↓ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner down"></div></div>`;
-                    info.appendChild(dBox);
-                }
-                // 【重构下行赛跑条】分子：单次绝对值；分母：全家单次绝对值总和
-                let dp = totalAbsDown > 0 ? ((cCur.downTp || 0) / totalAbsDown * 100).toFixed(1) : 0.0;
-                // 启用双轨制锚定渲染
-                dBox.querySelector('.v-vol').textContent = formatVolumeDual(cS.downTraffic, cCur.downTp);
-                dBox.querySelector('.v-pct').textContent = dp + '%';
-                dBox.querySelector('.zte-thin-bar-inner').style.width = Math.min(dp, 100) + '%';
-            }
-
-            // --- 右侧：网速进度条 ---
-            const speed = item.querySelector('.speed');
-            if (speed) {
-                speed.querySelectorAll('.connect-up, .connect-down').forEach(n => { n.style.display = 'none'; });
-                let enh = speed.querySelector('.zte-enhance-speed');
-                if (!enh) {
-                    enh = document.createElement('div'); enh.className = 'zte-enhance-speed';
-                    enh.innerHTML = `<div class="zte-bar-wrap zte-bar-up"><span class="v-val"></span><span class="v-pct"></span></div><div class="zte-bar-wrap zte-bar-down"><span class="v-val"></span><span class="v-pct"></span></div>`;
-                    speed.appendChild(enh);
-                }
-                let pu = sumUp > 0 ? (cCur.up / sumUp * 100) : 0, pd = sumDown > 0 ? (cCur.down / sumDown * 100) : 0;
-                let bU = enh.querySelector('.zte-bar-up'), bD = enh.querySelector('.zte-bar-down');
-                bU.style.setProperty('--p-up', Math.min(pu, 100)+'%');
-                bU.querySelector('.v-val').textContent = `🔼 ${formatBytes(cCur.up)}`;
-                bU.querySelector('.v-pct').textContent = (wanUp>0?pu.toFixed(1):0.0)+'%';
-                bD.style.setProperty('--p-down', Math.min(pd, 100)+'%');
-                bD.querySelector('.v-val').textContent = `🔽 ${formatBytes(cCur.down)}`;
-                bD.querySelector('.v-pct').textContent = (wanDown>0?pd.toFixed(1):0.0)+'%';
-            }
-        });
-    }
-
-    // ======== [5] 虚拟DOM引擎 (针对 Mesh 模式销毁列表节点的处理) ========
-    async function buildVirtualDOM(overlay) {
-        try {
-            let res = await fetch(`/?_type=vueData&_tag=vue_client_data&_=${new Date().getTime()}`);
-            let text = await res.text();
-            let xml = parser.parseFromString(text, "text/xml");
-
-            // 核心修复点 3：精准拆分 5.2GHz (wl1) 与 5.8GHz (wl2) 的渲染分类
-            let html2g = '', html5_2g = '', html5_8g = '', htmlWired = '';
-
-            let instances = xml.querySelectorAll("OBJ_CLIENTS_ID Instance");
-            instances.forEach(inst => {
-                let dev = parseInstance(inst);
-                if (!dev.MACAddress) return;
-
-                let mac = escapeHTML(normalizeMac(dev.MACAddress));
-                let ip = escapeHTML(dev.IPAddress || '');
-                // 核心修复点 2：优先读取中文 AliasName，不存在则降级 HostName
-                let name = escapeHTML(dev.AliasName || dev.HostName || '未知设备');
-                let iface = dev.Interface || '';
-
-                let itemHtml = `
+'use strict';console.log("🚀 哥哥科技 V5.8.8b 终极引擎已装载...");
+function eh(s){if(!s)return'';return String(s).replace(/[&<>'"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m];});}
+const cfg={injectMode:1,calcMode:1,ratioExtremeUp:10,ratioWarnUp:0.07,ratioExtremeDown:0.01,ratioThreshold:7,readSaveData:1,portMap:{"eth1":"网口 1","eth2":"网口 2","eth3":"网口 3","eth4":"网口 4","wl0":"2.4G","wl1":"5.2G","wl2":"5.8G"}};
+const st={lastTime:0,WAN瞬时上行:0,WAN瞬时下行:0,WAN总出站_上:0,WAN总入站_下:0,clients:{}};
+let f1=false;const pr=new DOMParser();let ltxt=null;const oo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(){this.addEventListener('load',function(){try{if(this.responseType===''||this.responseType==='text'){if(this.responseText&&this.responseText.includes('<OBJ_CLIENTS_ID>')){ltxt=this.responseText;}}}catch(e){}});oo.apply(this,arguments);};
+function s2b(s){if(!s)return 0;let m=s.match(/([\d.]+)\s*(G|M|K)?bps/i);if(!m)return 0;let v=parseFloat(m[1]);let u=(m[2]||"").toUpperCase();if(u==='G')return v*1000000000;if(u==='M')return v*1000000;if(u==='K')return v*1000;return v;}
+function fb(b){if(b>=1000000)return(b/1000000).toFixed(3)+' Mbps';if(b>=1000)return(b/1000).toFixed(2)+' Kbps';return Math.round(b)+' bps';}
+function fB(b){let y=b/8;if(y>=1048576)return(y/1048576).toFixed(3)+' MiB/s';if(y>=1024)return(y/1024).toFixed(2)+' KiB/s';return Math.round(y)+' B/s';}
+function fv(b){let y=b/8;if(y>=1073741824)return(y/1073741824).toFixed(3)+' GiB';if(y>=1048576)return(y/1048576).toFixed(2)+' MiB';if(y>=1024)return(y/1024).toFixed(1)+' KiB';return Math.round(y)+' B';}
+function fvd(bi,bo){let y=bi/8,yo=bo/8;if(y>=1073741824)return(y/1073741824).toFixed(3)+' | '+(yo/1073741824).toFixed(4)+' GiB';if(y>=1048576)return(y/1048576).toFixed(2)+' | '+(yo/1048576).toFixed(3)+' MiB';if(y>=1024)return(y/1024).toFixed(2)+' | '+(yo/1024).toFixed(1)+' KiB';return Math.round(y)+' | '+Math.round(yo)+' B';}
+function fsv(b){let y=b/8;if(y>=1073741824)return(y/1073741824).toFixed(3)+'G';if(y>=1048576)return(y/1048576).toFixed(2)+'M';if(y>=1024)return(y/1024).toFixed(1)+'K';return Math.round(y)+'B';}
+function nm(m){if(!m)return'';return m.toLowerCase().replace(/-/g,':').replace(/\s/g,'');}
+function pi(n){let o=Object.create(null);let c=n.children;for(let i=0;i<c.length;i++){if(c[i].tagName==="ParaName"){let k=c[i].textContent;let v="";let j=i+1;while(j<c.length&&c[j].tagName!=="ParaName"){if(c[j].tagName==="ParaValue"){v=c[j].textContent;i=j;break;}j++;}o[k]=v;}}return o;}
+const css=document.createElement('style');css.innerHTML=`.config-item{clear:both}.config-item-box{display:flex!important;align-items:stretch!important;padding-bottom:12px!important}.config-item .logo{width:33%!important;float:none!important;display:flex!important;flex-direction:row}.config-item .dev-intro{flex:1;display:flex!important;flex-direction:column;justify-content:flex-start;min-height:100px;padding-bottom:0!important;margin-bottom:0!important}.config-item .info{width:27%!important;float:none!important;display:flex!important;flex-direction:column;justify-content:flex-start;padding:0 10px!important;border-right:1px solid #eee}.config-item .speed{width:40%!important;float:none!important;display:flex!important;flex-direction:column;justify-content:center;padding:0 10px!important}.geek-row{display:flex;justify-content:space-between;align-items:center;white-space:nowrap;height:20px}.geek-label{width:110px;color:#333;font-weight:bold}.geek-val-box{flex:1;display:flex;gap:15px;margin-left:10px}.geek-fixed-width{display:inline-block;width:120px}.geek-right-box{text-align:right;min-width:220px;font-weight:bold}.c-up{color:#ff4c00}.c-down{color:#0059fa}.gege-up-box,.gege-down-box{margin-top:auto!important;margin-bottom:0!important;width:95%}.gege-ratio-box{margin-top:10px;width:95%;margin-bottom:5px}.t-row{font-size:12px;font-weight:bold;margin-bottom:2px;display:flex;justify-content:space-between;font-family:Consolas}.zte-thin-bar{width:100%;height:3px;background:rgba(0,0,0,0.05);border-radius:1.5px;overflow:hidden}.zte-thin-bar-inner{height:100%;transition:width 0.5s ease-out}.zte-thin-bar-inner.up{background:#ff4c00}.zte-thin-bar-inner.down{background:#0059fa}.gege-ratio-top{display:flex;justify-content:space-between;font-size:12px;font-weight:bold;margin-bottom:2px}.gege-ratio-bar{width:100%;height:4px;background:#0059fa;border-radius:2px;overflow:hidden}.gege-ratio-bar-inner{height:100%;background:#ff4c00;transition:width 0.5s ease-out}.zte-enhance-speed{display:flex;flex-direction:column;gap:6px;width:100%;font-family:Consolas}.zte-bar-wrap{position:relative;width:100%;border-radius:4px;border:1px solid;font-size:13px;font-weight:bold;overflow:hidden;padding:3px 8px;display:flex;justify-content:space-between;align-items:center;z-index:1;box-sizing:border-box}.zte-bar-wrap span{font-size:inherit;font-weight:inherit}.zte-bar-up{color:#ff4c00;border-color:rgba(255,76,0,0.3)}.zte-bar-down{color:#0059fa;border-color:rgba(0,89,250,0.3)}.zte-bar-up::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(255,76,0,0.12);width:var(--p-up,0%);transition:width 0.5s}.zte-bar-down::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(0,89,250,0.12);width:var(--p-down,0%);transition:width 0.5s}#config-list.gege-list-container{background-color:#ffffff!important;border-radius:8px!important;border:1px solid #e0e0e0!important;padding:20px 30px!important;box-shadow:0 2px 10px rgba(0,0,0,0.02)!important;margin-top:10px!important}.gege-section{margin-bottom:10px}.gege-section:last-child{margin-bottom:0}.gege-list-container .config-title{font-size:16px!important;font-weight:bold!important;color:#333!important;margin:15px 0 10px 0!important;padding-bottom:5px!important}.gege-list-container .gege-section:first-child .config-title{margin-top:0!important}.gege-empty-state{color:#999!important;font-size:14px!important;padding:0 0 15px 5px!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:5px!important}.gege-list-item{background-color:transparent!important;border-bottom:1px solid #f0f0f0!important;padding:15px 10px!important;margin-bottom:0!important;border-radius:0!important}.gege-list-item:last-child{border-bottom:none!important}#zte-geek-board{background-color:transparent!important;border-left:4px solid #0059fa!important;border-radius:0!important;padding:5px 0 5px 15px!important;margin:10px 0 15px 0!important;box-shadow:none!important;border-bottom:1px solid #f0f0f0!important;font-size:14px;display:flex;flex-direction:column;gap:6px;padding-bottom:15px!important}`;document.head.appendChild(css);
+window.gegeRenderedMacs=new Set();
+async function rd(pWan=null){if(f1)return;f1=true;
+try{const n=performance.now();let wx;if(pWan){wx=pr.parseFromString(pWan,"text/xml");}else{const wr=await fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${Date.now()}`);if(!wr.ok){console.warn("[哥哥科技] WAN口 API 请求异常，跳过本次更新",wr.status);return;}const wt=await wr.text();if(!wt.includes('<OBJ_HOME_BASICINFO_ID>')){console.warn("[哥哥科技] Session 可能已失效，成功拦截脏数据覆盖");return;}wx=pr.parseFromString(wt,"text/xml");}let cx=ltxt?pr.parseFromString(ltxt,"text/xml"):null;const bn=wx.querySelector("OBJ_HOME_BASICINFO_ID Instance");const wi=bn?pi(bn):{};let uw=s2b(wi.WANUpRate),dw=s2b(wi.WANDownRate);let ci=Object.create(null);let su=0,sd=0;const cns=cx?.querySelectorAll("OBJ_CLIENTS_ID Instance")||[];cns.forEach(node=>{let d=pi(node);if(d.MACAddress){let m=nm(d.MACAddress);let up=s2b(d.UpRate),down=s2b(d.DownRate);let ut=(parseFloat(d.UpThroughput)||0)*8000,dt=(parseFloat(d.DownThroughput)||0)*8000;ci[m]={上行速率:up,下行速率:down,interface:d.Interface||"",官方上:ut,官方下:dt};su+=up;sd+=down;}});let ov=document.getElementById('gege-global-overlay');let curMacs=Object.keys(ci);let dirty=window.gegeForceUIRedraw||(curMacs.length!==window.gegeRenderedMacs.size);if(!dirty&&curMacs.length>0){for(let i=0;i<curMacs.length;i++){if(!window.gegeRenderedMacs.has(curMacs[i])){dirty=true;break;}}}let wiped=ov&&ov.style.display==='block'&&!ov.querySelector('.gege-list-item');if(ov&&ov.style.display==='block'&&(dirty||wiped)){bv(ov);window.gegeRenderedMacs=new Set(curMacs);window.gegeForceUIRedraw=false;}if(st.lastTime!==0){let dt=(n-st.lastTime)/1000;st.WAN总出站_上+=((st.WAN瞬时上行+uw)/2)*dt;st.WAN总入站_下+=((st.WAN瞬时下行+dw)/2)*dt;for(let m in ci){if(!st.clients[m]){st.clients[m]={upSpeed:0,downSpeed:0,积分上:0,积分下:0,up基准:cfg.readSaveData===1?0:ci[m].官方上,down基准:cfg.readSaveData===1?0:ci[m].官方下,lastUp:ci[m].官方上,lastDown:ci[m].官方下};}let cS=st.clients[m],cC=ci[m];if(cC.官方上<cS.lastUp){cS.up基准=cS.up基准-cS.lastUp;}if(cC.官方下<cS.lastDown){cS.down基准=cS.down基准-cS.lastDown;}cS.lastUp=cC.官方上;cS.lastDown=cC.官方下;cS.积分上+=((cS.upSpeed+cC.上行速率)/2)*dt;cS.积分下+=((cS.downSpeed+cC.下行速率)/2)*dt;cS.upSpeed=cC.上行速率;cS.downSpeed=cC.下行速率;}}st.lastTime=n;st.WAN瞬时上行=uw;st.WAN瞬时下行=dw;let LUp=0,LDown=0;for(let m in st.clients){LUp+=st.clients[m].积分上;LDown+=st.clients[m].积分下;}ru(uw,dw,su,sd,LUp,LDown,ci);}catch(e){console.error("[哥哥科技] 周期采样中断:",e);}
+finally{f1=false;}}
+function ru(uw,dw,su,sd,LUp,LDown,ci){let tu=0,td=0,tu_abs=0,td_abs=0;for(let m in ci){tu+=Math.max(0,(ci[m].官方上||0)-(st.clients[m]?.up基准??0));td+=Math.max(0,(ci[m].官方下||0)-(st.clients[m]?.down基准??0));tu_abs+=(ci[m].官方上||0);td_abs+=(ci[m].官方下||0);}let mn=document.querySelector('.el-table')||document.querySelector('.config-item')?.closest('div')||document.querySelector('.main-content');if(mn){let bd=document.getElementById('zte-geek-board');if(!bd){bd=document.createElement('div');bd.id='zte-geek-board';bd.innerHTML=`<div class="geek-row"><span class="geek-label">WAN口速率</span><div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-wan-up-bps"></span><span class="c-down geek-fixed-width" id="gb-wan-down-bps"></span></div><div class="geek-right-box"><span class="c-up" id="gb-wan-up-bytes"></span> | <span class="c-down" id="gb-wan-down-bytes"></span></div></div><div class="geek-row"><span class="geek-label">局域网代数和</span><div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-lan-up-bps"></span><span class="c-down geek-fixed-width" id="gb-lan-down-bps"></span></div><div class="geek-right-box">实时占比：<span class="c-up" id="gb-perc-up"></span> | <span class="c-down" id="gb-perc-down"></span></div></div><div class="geek-row"><span class="geek-label">LAN：</span><div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-lan-up-vol"></span><span class="c-down geek-fixed-width" id="gb-lan-down-vol"></span></div><div class="geek-right-box">WAN：<span class="c-up" id="gb-wan-up-vol"></span> | <span class="c-down" id="gb-wan-down-vol"></span></div></div><div class="geek-row"><span class="geek-label">高精流量统计 -></span><div class="geek-val-box"><span class="c-up geek-fixed-width" id="gb-int-up-vol"></span><span class="c-down geek-fixed-width" id="gb-int-down-vol"></span></div><div class="geek-right-box" style="color: #666;">当前总计：<span class="c-up" id="gb-abs-up-vol"></span> | <span class="c-down" id="gb-abs-down-vol"></span></div></div>`;bd._UI={wanUpBps:bd.querySelector('#gb-wan-up-bps'),wanDownBps:bd.querySelector('#gb-wan-down-bps'),wanUpBytes:bd.querySelector('#gb-wan-up-bytes'),wanDownBytes:bd.querySelector('#gb-wan-down-bytes'),lanUpBps:bd.querySelector('#gb-lan-up-bps'),lanDownBps:bd.querySelector('#gb-lan-down-bps'),percUp:bd.querySelector('#gb-perc-up'),percDown:bd.querySelector('#gb-perc-down'),lanUpVol:bd.querySelector('#gb-lan-up-vol'),lanDownVol:bd.querySelector('#gb-lan-down-vol'),wanUpVol:bd.querySelector('#gb-wan-up-vol'),wanDownVol:bd.querySelector('#gb-wan-down-vol'),intUpVol:bd.querySelector('#gb-int-up-vol'),intDownVol:bd.querySelector('#gb-int-down-vol'),absUpVol:bd.querySelector('#gb-abs-up-vol'),absDownVol:bd.querySelector('#gb-abs-down-vol')};let ac=document.getElementById('gege-global-overlay');if(!ac||ac.style.display==='none'){ac=document;}let wt=Array.from(ac.querySelectorAll('.config-title')).find(el=>el.textContent.includes('有线设备'));if(wt){wt.parentNode.insertBefore(bd,wt.nextSibling);}else if(mn){mn.parentNode.insertBefore(bd,mn);}}bd._UI.wanUpBps.textContent=`🔼 ${fb(uw)}`;bd._UI.wanDownBps.textContent=`🔽 ${fb(dw)}`;bd._UI.wanUpBytes.textContent=`🔼 ${fB(uw)}`;bd._UI.wanDownBytes.textContent=`🔽 ${fB(dw)}`;bd._UI.lanUpBps.textContent=`🔼 ${fb(su)}`;bd._UI.lanDownBps.textContent=`🔽 ${fb(sd)}`;bd._UI.percUp.textContent=`🔼 ${uw>0?((su/uw)*100).toFixed(1):0.0}%`;bd._UI.percDown.textContent=`🔽 ${dw>0?((sd/dw)*100).toFixed(1):0.0}%`;bd._UI.lanUpVol.textContent=`🔼 ${fv(LUp)}`;bd._UI.lanDownVol.textContent=`🔽 ${fv(LDown)}`;bd._UI.wanUpVol.textContent=`🔼 ${fv(st.WAN总出站_上)}`;bd._UI.wanDownVol.textContent=`🔽 ${fv(st.WAN总入站_下)}`;bd._UI.intUpVol.textContent=`🔼 ${fv(tu)}`;bd._UI.intDownVol.textContent=`🔽 ${fv(td)}`;bd._UI.absUpVol.textContent=`🔼 ${fv(tu_abs)}`;bd._UI.absDownVol.textContent=`🔽 ${fv(td_abs)}`;}const di=document.querySelectorAll('.config-item');di.forEach(item=>{let fm=null;const om=Array.from(item.querySelectorAll('.dev-number')).find(n=>n.textContent.includes('MAC'));if(om){const mm=om.textContent.match(/([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/);if(mm){fm=nm(mm[0]);}}let cm=item.getAttribute('data-gege-mac');let fmac=null;if(fm){fmac=fm;if(cm!==fm)item.setAttribute('data-gege-mac',fm);}else{fmac=null;item.removeAttribute('data-gege-mac');}if(!fmac){item.querySelector('.gege-up-box')?.remove();item.querySelector('.gege-ratio-box')?.remove();item.querySelector('.gege-down-box')?.remove();item.querySelector('.zte-enhance-speed')?.remove();return;}let mac=fmac;const cC=ci[mac]||{上行速率:0,下行速率:0,interface:"",官方上:0,官方下:0};const cS=st.clients[mac]||{积分上:0,积分下:0};const di_=item.querySelector('.dev-intro');if(di_){let box=di_.querySelector('.gege-up-box');if(!box){box=document.createElement('div');box.className='gege-up-box';box.innerHTML=`<div class="t-row c-up"><span>↑ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner up"></div></div>`;di_.appendChild(box);}let p=tu_abs>0?((cC.官方上||0)/tu_abs*100).toFixed(1):0.0;box.querySelector('.v-vol').textContent=fvd(cS.积分上,cC.官方上);box.querySelector('.v-pct').textContent=p+'%';box.querySelector('.zte-thin-bar-inner').style.width=Math.min(p,100)+'%';}const inf=item.querySelector('.info');if(inf){Array.from(inf.querySelectorAll('.dev-ip:not(.gege-box *)')).slice(1).forEach(n=>{n.style.display='none';});inf.querySelectorAll('.dev-number:not(.gege-box *)').forEach(n=>{n.style.display='none';});let rBox=inf.querySelector('.gege-ratio-box');if(!rBox){rBox=document.createElement('div');rBox.className='gege-ratio-box';rBox.innerHTML=`<div class="gege-ratio-top"><span class="v-port"></span><span class="v-interval" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 12.5px; opacity: 0.75; letter-spacing: 0.5px;"><span class="c-up"></span><span style="color:#666; margin:0 3px;">，</span><span class="c-down"></span></span><span class="v-rt-pct"></span></div><div class="gege-ratio-bar"><div class="gege-ratio-bar-inner"></div></div>`;inf.appendChild(rBox);}let hup=Math.max(0,cC.官方上-(cS.up基准||0));let hdown=Math.max(0,cC.官方下-(cS.down基准||0));let barRatio=(hup+hdown)>0?(hup/(hup+hdown)*100):0;let txt="",tColor="#0059fa";if(cfg.calcMode===1){let ratio=hdown>0?(hup/hdown):(hup>0?Infinity:0);if(ratio>cfg.ratioExtremeUp){tColor='#ff4c00';txt=(ratio===Infinity?'∞':ratio.toFixed(2))+'⚠️';}else if(ratio>cfg.ratioWarnUp){tColor='#ff4c00';txt=(ratio*100).toFixed(1)+'%';}else if(ratio>=cfg.ratioExtremeDown){tColor='#0059fa';txt=(ratio*100).toFixed(1)+'%';}else{tColor='#0059fa';let revRatio=hup>0?(hdown/hup):(hdown>0?Infinity:0);txt=(revRatio===Infinity?'∞':revRatio.toFixed(1))+'x';}}else{tColor=barRatio>cfg.ratioThreshold?'#ff4c00':'#0059fa';txt=barRatio.toFixed(1)+'%';}rBox.querySelector('.v-port').textContent=cfg.portMap[cC.interface]||cC.interface||"未知";rBox.querySelector('.v-interval .c-up').textContent=''+fsv(hup);rBox.querySelector('.v-interval .c-down').textContent=''+fsv(hdown);let rtPct=rBox.querySelector('.v-rt-pct');rtPct.textContent=txt;rtPct.style.color=tColor;rBox.querySelector('.gege-ratio-bar-inner').style.width=Math.min(barRatio,100)+'%';let dBox=inf.querySelector('.gege-down-box');if(!dBox){dBox=document.createElement('div');dBox.className='gege-down-box';dBox.innerHTML=`<div class="t-row c-down"><span>↓ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner down"></div></div>`;inf.appendChild(dBox);}let dp=td_abs>0?((cC.官方下||0)/td_abs*100).toFixed(1):0.0;dBox.querySelector('.v-vol').textContent=fvd(cS.积分下,cC.官方下);dBox.querySelector('.v-pct').textContent=dp+'%';dBox.querySelector('.zte-thin-bar-inner').style.width=Math.min(dp,100)+'%';}const sp=item.querySelector('.speed');if(sp){sp.querySelectorAll('.connect-up, .connect-down').forEach(n=>{n.style.display='none';});let enh=sp.querySelector('.zte-enhance-speed');if(!enh){enh=document.createElement('div');enh.className='zte-enhance-speed';enh.innerHTML=`<div class="zte-bar-wrap zte-bar-up"><span class="v-val"></span><span class="v-pct"></span></div><div class="zte-bar-wrap zte-bar-down"><span class="v-val"></span><span class="v-pct"></span></div>`;sp.appendChild(enh);}let pu=su>0?(cC.上行速率/su*100):0,pd=sd>0?(cC.下行速率/sd*100):0;let bU=enh.querySelector('.zte-bar-up'),bD=enh.querySelector('.zte-bar-down');bU.style.setProperty('--p-up',Math.min(pu,100)+'%');bU.querySelector('.v-val').textContent=`🔼 ${fB(cC.上行速率)}`;bU.querySelector('.v-pct').textContent=(uw>0?pu.toFixed(1):0.0)+'%';bD.style.setProperty('--p-down',Math.min(pd,100)+'%');bD.querySelector('.v-val').textContent=`🔽 ${fB(cC.下行速率)}`;bD.querySelector('.v-pct').textContent=(dw>0?pd.toFixed(1):0.0)+'%';}});}
+async function bv(ov){try{let x=ltxt?pr.parseFromString(ltxt,"text/xml"):null;let badge='';if(window.gegeHiddenDevices&&Object.keys(window.gegeHiddenDevices).length>0){badge='<span style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：智能Mesh适配)</span>';}let h2='',h52='',h58='',hw='';let ins=x?.querySelectorAll("OBJ_CLIENTS_ID Instance")||[];ins.forEach(inst=>{let d=pi(inst);if(!d.MACAddress)return;let mac=nm(d.MACAddress);let ip=eh(d.IPAddress||'');let name=eh(d.AliasName||d.HostName||'未知设备');let iface=d.Interface||'';let it=`
                     <div class="col-md-12 col-xs-12 config-item gege-list-item" data-gege-mac="${mac}">
                         <div class="config-item-box" style="display: flex; align-items: stretch;">
                             <div class="col-md-5 col-xs-7 logo" style="width: 33%; display: flex; flex-direction: row; align-items: center;">
-                                <div class="dev-logo" style="width: 50px; height: 50px; min-width: 50px; margin-right: 15px; background: url('/jquery/static/img/home/unknown_computer.png') 0% 0% / 50px no-repeat; display: inline-block;"><span></span></div>
+                                <div class="dev-logo" style="width: 50px; height: 50px; min-width: 50px; margin-right: 15px; background: url('/jquery/static/img/home/unknown_computer.png') 0% 0% / 50px no-repeat; display: inline-block;"></div>
                                 <div class="dev-intro" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-height: 100px;">
                                     <div class="dev-name" style="font-weight: bold; color: #333; font-size: 14px;">${name}</div>
                                 </div>
@@ -626,191 +57,46 @@
                             </div>
                         </div>
                     </div>
-                `;
-
-                // 将拆分后的频率数据装载至独立板块
-                if (iface === 'wl0') html2g += itemHtml;
-                else if (iface === 'wl1') html5_2g += itemHtml;
-                else if (iface === 'wl2') html5_8g += itemHtml;
-                else htmlWired += itemHtml;
-            });
-
-            overlay.innerHTML = `
+                `;if(iface==='wl0'||iface==='wlan0'||iface==='wlan1'||iface==='wl1')h2+=it;else if(['wlan5','wl4','wlan4','wl3','wlan3'].includes(iface))h52+=it;else if(iface==='wl2'||iface==='wlan2'||iface==='wl5'||/w/i.test(iface))h58+=it;else hw+=it;});ov.innerHTML=`
                 <div style="padding: 20px; max-width: 1200px; margin: 0 auto; min-height: 100%;">
                     <div id="config-list" class="config-list gege-list-container">
                         <div class="gege-section">
                             <div class="config-title">无线设备（2.4GHz）</div>
-                            ${html2g || '<div class="gege-empty-state">没有连接设备</div>'}
+                            ${h2 || '<div class="gege-empty-state">没有连接设备</div>'}
                         </div>
                         <div class="gege-section">
                             <div class="config-title">无线设备（5.2GHz）</div>
-                            ${html5_2g || '<div class="gege-empty-state">没有连接设备</div>'}
+                            ${h52 || '<div class="gege-empty-state">没有连接设备</div>'}
                         </div>
                         <div class="gege-section">
                             <div class="config-title">无线设备（5.8GHz）</div>
-                            ${html5_8g || '<div class="gege-empty-state">没有连接设备</div>'}
+                            ${h58 || '<div class="gege-empty-state">没有连接设备</div>'}
                         </div>
                         <div class="gege-section">
-                            <div class="config-title">有线设备</div>
-                            ${htmlWired || '<div class="gege-empty-state">没有连接设备</div>'}
+                            <div class="config-title">有线设备${badge}</div>
+                            ${hw || '<div class="gege-empty-state">没有连接设备</div>'}
                         </div>
                     </div>
                 </div>
-            `;
-        } catch (e) {
-            overlay.innerHTML = `<div style="padding: 20px; color: red;">数据渲染失败: ${escapeHTML(e.message)}</div>`;
-        }
-    }
-
-    // ======== [6] 侧边栏菜单注入与事件劫持 ========
-    function injectGegeMenu() {
-        let menuContainer = document.querySelector('.menu_items');
-        if (!menuContainer) return;
-
-        let origMenuDiv = menuContainer.querySelector('div');
-        if (!origMenuDiv) return;
-
-        let gegeMenuWrapper = origMenuDiv.cloneNode(true);
-        gegeMenuWrapper.id = 'gege-menu-wrapper';
-
-        let aTag = gegeMenuWrapper.querySelector('a');
-        let liTag = gegeMenuWrapper.querySelector('li');
-
-        if (aTag) {
-            aTag.href = "javascript:void(0);";
-            aTag.classList.remove('router-link-exact-active', 'router-link-active');
-        }
-
-        if (liTag) {
-            liTag.classList.remove('is-active');
-            let textSpan = liTag.querySelector('span');
-            if (textSpan) textSpan.textContent = '哥哥科技面板';
-
-            const _parseToken = (t, salt) => {
-                let l = salt.length;// 兼容旧版前缀偏移量校验
-                let offset = (l === 6) ? (l + 9) : 15;
-                let r = t.substring(offset).split('').reverse().join('');
-                return decodeURIComponent(escape(window.atob(r)));
-            };
-
-            const _authMatrix = {
-                'ZTE_LEGACY_WIRED': "ZTE_AUTH_TOKEN_/xK9vP2mQ5zL8wJ4nB7cT1fR",
-                'ZTE_NEBULA_MAX': "ZTE_AUTH_TOKEN_/2p5i2Z6Aqo5Re65lOZ5lOZ5",
-                'ZTE_GENERIC_OS': "ZTE_AUTH_TOKEN_/pM4aC7yX9kH3bV2rN6dW8qG"
-            };
-
-            const _getHardwareProfile = () => {// 待优化通用版UX
-                let mask = Object.keys(_authMatrix).length;
-                let hwId = (mask << 2) - 10;
-                let profileIndex = hwId ^ 3;
-                return Object.keys(_authMatrix)[profileIndex];
-            };
-
-            const _ztAuth = _authMatrix[_getHardwareProfile()];
-            if (textSpan) textSpan.textContent = _parseToken(_ztAuth, textSpan.textContent);
-            let imgs = liTag.querySelectorAll('img');// 节点
-            imgs.forEach(img => img.remove());
-            let emojiSpan = document.createElement('span');
-            emojiSpan.textContent = '🚀';
-            emojiSpan.style.cssText = 'font-size: 20px; margin-right: 5px; vertical-align: middle; display: inline-block; width: 22px; text-align: center;';
-            if (textSpan) liTag.insertBefore(emojiSpan, textSpan);
-            liTag.style.color = 'rgb(255, 255, 255)'; // 确保未选中状态下强制为白色，防止和中兴原生蓝底冲突消失
-        }
-
-        menuContainer.appendChild(gegeMenuWrapper);
-
-        document.addEventListener('click', function(e) {
-            let clickedWrapper = e.target.closest('.menu_items > div');
-            if (!clickedWrapper) return;
-
-            let overlay = document.getElementById('gege-global-overlay');
-
-            if (clickedWrapper.id === 'gege-menu-wrapper') {
-                e.preventDefault();
-                e.stopPropagation();
-
-                document.querySelectorAll('.menu_items a').forEach(a => a.classList.remove('router-link-exact-active', 'router-link-active'));
-                document.querySelectorAll('.menu_items li').forEach(li => {
-                    li.classList.remove('is-active');
-                    if(li.style.color === 'rgb(61, 163, 247)') li.style.color = 'rgb(255, 255, 255)'; // 切换时把官方菜单归位白字
-                });
-                if(aTag) aTag.classList.add('router-link-exact-active', 'router-link-active');
-                if(liTag) {
-                    liTag.classList.add('is-active');
-                    liTag.style.color = 'rgb(61, 163, 247)'; // 选中时高亮蓝色
-                }
-
-                if (!overlay) {
-                    overlay = document.createElement('div');
-                    overlay.id = 'gege-global-overlay';
-
-                    let pageTop = document.querySelector('.page-top');
-                    if (pageTop) {
-                        let targetContent = pageTop.parentNode;
-                        targetContent.style.position = 'relative';
-                        overlay.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; min-height: 100%; height: 100%; background: #f3f4f5; z-index: 9999; overflow-y: auto; padding-bottom: 50px;';
-                        targetContent.appendChild(overlay);
-                    } else {
-                        overlay.style.cssText = 'position: fixed; top: 60px; left: 240px; right: 0; bottom: 0; background: #f3f4f5; z-index: 9999; overflow-y: auto; padding-bottom: 50px;';
-                        document.body.appendChild(overlay);
-                    }
-                }
-
-                overlay.style.display = 'block';
-
-                // 获取数据并在内存中拼接设备结构
-                buildVirtualDOM(overlay).then(() => {
-                    // 当结构注入完成后，触发原有渲染逻辑挂载速度状态
-                    refreshSpeedData();
-                });
-
-            } else {
-                if (liTag) {
-                    liTag.classList.remove('is-active');
-                    liTag.style.color = 'rgb(255, 255, 255)'; // 点击官方菜单后，恢复白字
-                }
-                if (overlay) overlay.style.display = 'none';
-            }
-        }, true);
-    }
-
-    // ======== [7] 全域高精雷达：无条件 1000ms 轮询，积分绝不断层 ========
-    setInterval(() => {
-        refreshSpeedData();
-    }, 1000);
-
-    // ======== [8] 极简无感保活模块 (Iframe 秽土转生 + @noframes 防套娃) ========
-    const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // 10分钟
-    const keepAlivePaths = [
-        "/#/sys/index",
-        "/#/net/net",
-        "/#/wlan/wlan"
-    ];
-
-    const triggerKeepAlive = () => {
-        let oldIframe = document.getElementById('gege-keepalive-iframe');
-        if (oldIframe) {oldIframe.src = 'about:blank'; // 【新增】瞬间切断内部发出的未决请求，清空宿主内存
-                        oldIframe.remove();}
-
-        let newIframe = document.createElement('iframe');
-        newIframe.id = 'gege-keepalive-iframe';
-        newIframe.style.cssText = 'width:0; height:0; border:0; visibility:hidden; position:absolute; left:-9999px;';
-
-        let randomPath = keepAlivePaths[Math.floor(Math.random() * keepAlivePaths.length)];
-        newIframe.src = `${window.location.origin}${randomPath}`;
-
-        document.body.appendChild(newIframe);
-        console.log(`[哥哥科技面板] 极简保活起搏触发，Session 寿命已续期: ${newIframe.src}`);
-    };
-
-    // 保活顶层启动：首次 2 秒后触发，之后每 10 分钟循环
-    setTimeout(triggerKeepAlive, 2000);
-    setInterval(triggerKeepAlive, KEEP_ALIVE_INTERVAL);
-
-    // ======== [9] 首次 UI 挂载（必须等 DOM 就绪） ========
-    window.addEventListener('load', () => {
-        setTimeout(refreshSpeedData, 500);
-        setTimeout(injectGegeMenu, 1000);
-    });
-
+            `;}catch(e){ov.innerHTML=`<div style="padding: 20px; color: red;">数据渲染失败: ${eh(e.message)}</div>`;}}
+window.cf=function(){if(document.getElementById('gege-floating-btn'))return;let b=document.createElement('div');b.id='gege-floating-btn';b.innerHTML='🛸';b.style.cssText='position: fixed; top: 20px; right: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #0059fa, #00c6ff); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; box-shadow: 0 4px 15px rgba(0,89,250,0.5); cursor: pointer; z-index: 99999; transition: all 0.3s ease; user-select: none;';b.onmouseover=()=>{b.style.transform='scale(1.1) rotate(15deg)';};b.onmouseout=()=>{b.style.transform='scale(1) rotate(0deg)';};b.onclick=()=>window.tp();document.body.appendChild(b);};
+window.tp=function(fs=null){let ov=document.getElementById('gege-global-overlay');let open=ov&&ov.style.display==='block';let ts=fs!==null?fs:!open;let aTag=document.querySelector('#gege-menu-wrapper a');let liTag=document.querySelector('#gege-menu-wrapper li');if(!ts){if(liTag){liTag.classList.remove('is-active');liTag.style.color='rgb(255, 255, 255)';}if(ov)ov.style.display='none';return;}if(aTag&&liTag){aTag.classList.add('router-link-exact-active','router-link-active');liTag.classList.add('is-active');liTag.style.color='rgb(61, 163, 247)';}if(!ov){ov=document.createElement('div');ov.id='gege-global-overlay';let pt=document.querySelector('.page-top');if(pt){pt.parentNode.style.position='relative';ov.style.cssText='position: absolute; top: 0; left: 0; width: 100%; min-height: 100%; height: 100%; background: #f3f4f5; z-index: 9999; overflow-y: auto; padding-bottom: 50px;';pt.parentNode.appendChild(ov);}else{ov.style.cssText='position: fixed; top: 60px; left: 240px; right: 0; bottom: 0; background: #f3f4f5; z-index: 9999; overflow-y: auto; padding-bottom: 50px;';document.body.appendChild(ov);}}ov.style.display='block';if(!window.gegeBActivated){window.gegeBActivated=true;clearInterval(window.gegeMasterTimer);window.gegeMasterTimer=setInterval(et,1000);console.log("🚀 [哥哥科技] 监控引擎已全量升级！B1/B2 自动侦查防线激活");}bv(ov).then(()=>{if(window.gegeBActivated){et();}else{rd();}});};
+function ig(){let mc=document.querySelector('.menu_items');if(!mc)return;let od=mc.querySelector('div');if(!od)return;let gw=od.cloneNode(true);gw.id='gege-menu-wrapper';let aT=gw.querySelector('a');let liT=gw.querySelector('li');if(aT){aT.href="javascript:void(0);";aT.classList.remove('router-link-exact-active','router-link-active');}if(liT){liT.classList.remove('is-active');let ts=liT.querySelector('span');if(ts)ts.textContent='哥哥科技面板';const _pt=(t,s)=>{let l=s.length;let o=(l===6)?(l+9):15;let r=t.substring(o).split('').reverse().join('');return decodeURIComponent(escape(window.atob(r)));};const _am={'ZTE_LEGACY_WIRED':"ZTE_AUTH_TOKEN_/xK9vP2mQ5zL8wJ4nB7cT1fR",'ZTE_NEBULA_MAX':"ZTE_AUTH_TOKEN_/2p5i2Z6Aqo5Re65lOZ5lOZ5",'ZTE_GENERIC_OS':"ZTE_AUTH_TOKEN_/pM4aC7yX9kH3bV2rN6dW8qG"};const _ghp=()=>{let m=Object.keys(_am).length;let h=(m<<2)-10;let pi=h^3;return Object.keys(_am)[pi];};const _zt=_am[_ghp()];if(ts)ts.textContent=_pt(_zt,ts.textContent);let imgs=liT.querySelectorAll('img');imgs.forEach(img=>img.remove());let es=document.createElement('span');es.textContent='🚀';es.style.cssText='font-size: 20px; margin-right: 5px; vertical-align: middle; display: inline-block; width: 22px; text-align: center;';if(ts)liT.insertBefore(es,ts);liT.style.color='rgb(255, 255, 255)';}mc.appendChild(gw);document.addEventListener('click',function(e){let cw=e.target.closest('.menu_items > div');if(!cw)return;if(cw.id==='gege-menu-wrapper'){e.preventDefault();e.stopPropagation();let fBtn=document.getElementById('gege-floating-btn');if(fBtn)fBtn.remove();window.tp(true);}else{window.tp(false);}},true);}
+window.gegeBActivated=false;window.gegeEngineRunning=false;window.gegeLastDevCount=-1;window.gegeLastMeshDevCount=-1;window.gegeHiddenDevices={};window.gegeMasterTimer=setInterval(()=>{rd();},3000);
+async function et(){if(window.gegeEngineRunning)return;window.gegeEngineRunning=true;
+try{const ts=Date.now();const wr=await fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${ts}`);if(!wr.ok)throw new Error("WAN Fetch Error");const wt=await wr.text();if(!wt.includes('<OBJ_HOME_BASICINFO_ID>'))throw new Error("Session Invalid or Dirty WAN Data");const wx=pr.parseFromString(wt,"text/xml");let bn=wx.querySelector("OBJ_HOME_BASICINFO_ID Instance");let wi=bn?pi(bn):{};let dc=parseInt(wi.AccessDevNum);dc=isNaN(dc)?-1:dc;const lr=await fetch(`/?_type=vueData&_tag=vue_client_data&_=${ts}`);let lt=await lr.text();let ln=0;if(lt.includes('<OBJ_CLIENTS_ID>')){let tlx=pr.parseFromString(lt,"text/xml");ln=tlx.querySelectorAll("OBJ_CLIENTS_ID Instance").length;}if(window.gegeLastLanNodeCount===undefined)window.gegeLastLanNodeCount=-1;if(dc!==window.gegeLastDevCount||ln!==window.gegeLastLanNodeCount){window.gegeLastDevCount=dc;window.gegeLastLanNodeCount=ln;const tr=await fetch(`/?_type=vueData&_tag=vue_topo_data&_=${ts}`);if(!tr.ok)throw new Error("Topo HTTP Error");const tt=await tr.text();let tj;try{tj=JSON.parse(tt);}catch(e){throw new Error("Topo Payload is corrupted");}let mc=0;if(tj.agentlay1&&tj.agentlay1.length>0){mc=tj.agentlay1.reduce((sum,a)=>sum+(parseInt(a.accdevCount)||0),0);}if(mc!==window.gegeLastMeshDevCount){window.gegeLastMeshDevCount=mc;window.gegeForceUIRedraw=true;if(mc>0){const lir=await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${ts}`);const lix=pr.parseFromString(await lir.text(),"text/xml");let nd={};lix.querySelectorAll("OBJ_LAN_INFO_ID Instance").forEach(inst=>{let d=pi(inst);if(d.DevMeshType==='3'&&d.Active==='1'&&d.MACAddress){let mac=nm(d.MACAddress);let bn=d.DevName||d.HostName||d.DisplayedPictureName||d.AliasName||"Mesh设备";let bif=d.Interface||"";if(d.IFAliasName==='SSID1')bif='wl0';else if(d.IFAliasName==='SSID5')bif='wl4';nd[mac]={name:bn,iface:bif,origMac:d.MACAddress};}});window.gegeHiddenDevices=nd;console.log("🎯 [哥哥科技] 哨兵触发！更新 Mesh 狙击名单:",Object.keys(window.gegeHiddenDevices));}else{window.gegeLastMeshDevCount=0;window.gegeHiddenDevices={};}}}let hM=Object.keys(window.gegeHiddenDevices??{});if(hM.length>0){let inj="";for(let mac of hM){try{const m=window.gegeHiddenDevices[mac]||{};if(!m||!m.origMac)continue;const sr=await fetch(`/?_type=vueData&_tag=localnet_lan_detailinfo_lua&MACAddress=${encodeURIComponent(m.origMac||mac)}&_=${Date.now()}`);if(!sr.ok)continue;const sx=pr.parseFromString(await sr.text(),"text/xml");const si=sx.querySelector("OBJ_LANINFO_BYMAC Instance");if(si){let sd=pi(si);let ur=`${sd.UploadSpeed||0}Kbps`;let dr=`${sd.DownloadSpeed||0}Kbps`;let ut=((parseFloat(sd.BytesSend)||0)/1000).toFixed(4);let dt=((parseFloat(sd.BytesReceived)||0)/1000).toFixed(4);inj+=`
+                            <Instance>
+                                <ParaName>MACAddress</ParaName><ParaValue>${eh(mac)}</ParaValue>
+                                <ParaName>IPAddress</ParaName><ParaValue>${sd.IPAddress||""}</ParaValue>
+                                <ParaName>AliasName</ParaName><ParaValue>${eh(m.name)}</ParaValue>
+                                <ParaName>HostName</ParaName><ParaValue>${eh(m.name)}</ParaValue>
+                                <ParaName>Interface</ParaName><ParaValue>${eh(m.iface)}</ParaValue>
+                                <ParaName>UpRate</ParaName><ParaValue>${ur}</ParaValue>
+                                <ParaName>DownRate</ParaName><ParaValue>${dr}</ParaValue>
+                                <ParaName>UpThroughput</ParaName><ParaValue>${ut}</ParaValue>
+                                <ParaName>DownThroughput</ParaName><ParaValue>${dt}</ParaValue>
+                            </Instance>`;}}catch(e){}}if(inj!==""){lt=lt.replace('</OBJ_CLIENTS_ID>',`${inj}</OBJ_CLIENTS_ID>`);}}if(lt.includes('<OBJ_CLIENTS_ID>')){ltxt=lt;}await rd(wt);}catch(e){console.error("[哥哥科技] B版主引擎运行异常",e);}
+finally{window.gegeEngineRunning=false;}}
+const KEEP_ALIVE_INTERVAL=720000;const keepAlivePaths=["/#/sys","/#/app","/#/wlan/"];const triggerKeepAlive=()=>{let ifr=document.createElement('iframe');ifr.id='gege-keepalive-iframe';ifr.style.display='none';ifr.src=`${window.location.origin}${keepAlivePaths[Math.floor(Math.random()*keepAlivePaths.length)]}`;let zb=document.getElementById('gege-keepalive-iframe');if(zb)zb.remove();document.body.appendChild(ifr);console.log(`[哥哥科技] 保活起搏: ${ifr.src}`);setTimeout(()=>{if(ifr.parentNode){ifr.src='about:blank';ifr.remove();console.log(`[哥哥科技] 探针已自毁，内存释放`);}},12000);};setTimeout(triggerKeepAlive,2000);setInterval(triggerKeepAlive,KEEP_ALIVE_INTERVAL);
+window.addEventListener('load',()=>{setTimeout(rd,500);if(cfg.injectMode===2){console.log("👑 [哥哥科技] 霸道模式就绪：30秒后强制弹出");setTimeout(()=>{if(window.cf)window.cf();if(window.tp)window.tp(true);},30000);return;}let dc=0;const mo=setInterval(()=>{let mc=document.querySelector('.menu_items div');if(mc){clearInterval(mo);ig();console.log("[哥哥科技] 侧边栏菜单挂载成功!");}else{dc++;if(dc===30&&cfg.injectMode===1){console.log("🛸 [哥哥科技] 侧边栏10秒未就绪，空投悬浮舱...");if(window.cf)window.cf();}if(dc>=200){clearInterval(mo);console.log("[哥哥科技] 60秒探测结束，停止寻找侧边栏。");}}},300);});
 })();
