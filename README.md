@@ -47,9 +47,9 @@
 
 ### 环境要求
 在使用本脚本之前，请确保您的浏览器已安装用户脚本管理器扩展，例如：
-* **篡改猴   [Tampermonkey](https://www.tampermonkey.net/)**  (推荐, 支持 Chrome, Edge, Firefox, Safari)
-* **暴力猴   [Violentmonkey](https://violentmonkey.github.io/)**
-* **油猴子   [Greasemonkey](https://www.greasespot.net/)**
+* **篡改猴   [Tampermonkey](https://www.tampermonkey.net)**  (推荐, 支持 Chrome, Edge, Firefox, Safari)
+* **暴力猴   [Violentmonkey](https://violentmonkey.github.io)**
+* **油猴子   [Greasemonkey](https://www.greasespot.net)**
 
 ### 脚本安装
 1.  点击此处安装全面版ZTE-Stat_Max：
@@ -60,8 +60,8 @@
 
 全面更新兄弟项目，接入智能集成&nbsp;⇨&nbsp;<a href="https://github.com/ucxn/ZTE-Stat_HA" target="_blank"><img src="https://img.shields.io/badge/HACS-ZTE--Stat__Home%20Assistant-41BDF5?style=for-the-badge&logo=homeassistant&logoColor=white" alt="ZTE HACS"></a>&nbsp;&nbsp;&nbsp;<a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank"><img src="https://img.shields.io/badge/Bilibili-%E8%A7%82%E7%9C%8B%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91-FF8EB3?style=for-the-badge&logo=bilibili&logoColor=white" alt="Bilibili Video"></a>
     
-3.  在弹出的 Tampermonkey 界面中点击 **“安装”** 或 **“更新”**。
-4.  登录您的中兴路由器 Web 管理后台，*输入管理员密码*，登录成功后 *刷新网页* ,进入“组网管理”界面，脚本将自动生效。
+2.  在弹出的安装界面中点击 **“安装”** 或 **“更新”**。
+3.  登录您的中兴路由器 Web 管理后台，*输入管理员密码*，登录成功后 *刷新网页* ,进入“组网管理”界面，脚本将自动生效。
     
 > [!IMPORTANT]
  *备用唤醒入口*：若不生效，请检查**左侧工具边栏导航**，找到 **🚀 哥哥科技面板** 点开进行使用，效果基本一致。<br><br>请确保 **篡改猴** 插件运行正常！！也就是 浏览器 拓展图标这里，正常显示数字！允许用户脚本注入教程如下图。

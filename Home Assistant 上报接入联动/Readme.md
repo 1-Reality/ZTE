@@ -1,4 +1,4 @@
-# GBNPA Router Sync by 哥哥科技
+# ZTE-Stat_HA by 哥哥科技（GBNPA Router Sync）
 
 [English](https://github.com/ucxn/ZTE-Stat_Max/blob/main/README_EN.md) | **简体中文**
 
@@ -37,8 +37,27 @@
 * **离线防回流机制 🛡️**：内置双重容错与防御逻辑，精准区分“网络抖动导致的数据空缺”与“设备真实的流量重置”，防止因路由器 10 分钟机制导致的数据虚假翻倍。
 * **配置流接入 (Config Flow) 🖥️**：原生支持 HA 现代化的图形界面安装，无需手动修改 `configuration.yaml`，即插即用。
 
-## 🚀 数据采集端部署
-1. 确保有某台常亮主机（Home Server）的浏览器上已安装 **[脚本猫 (ScriptCat)](https://scriptcat.org/zh-CN/script-show-page/6194)** 插件。
+## 🚀 安装指南 (Installation)
+
+本系统分为 **HA 接收端** 与 **JS 采集端** 两部分，请依次完成部署。
+
+### 阶段一：Home Assistant 端部署
+
+1. 将本项目目录下的 `custom_components/gbnpa_router` 文件夹完整复制到你的 Home Assistant 的 `config/custom_components/` 目录下。
+2. 重启 Home Assistant 服务。
+3. 进入 HA 面板，点击 **设置 -> 设备与服务 -> 添加集成**。
+4. 搜索 **GBNPA** 并点击添加，系统将自动完成 Webhook 监听端口的初始化注册。
+
+> [!TIP]
+> ### 通过 HACS 安装
+> 此方法须确保 HAOS 具有良好的网络环境，否则请按前述方法手动安装即可。
+> 
+> 打开 Home Assistant，转到“HACS”面板，点击右上角的 <kbd>⋮</kbd> ，选择 <img src="https://api.iconify.design/mdi/source-repository.svg?color=%23444444" width="16" align="center"> Custom repositories <br><br>
+> Type 选择 🧩 `Integration`，地址输入（可复制）：`ucxn/ZTE-Stat_HA`
+
+### 阶段二：数据采集端部署
+
+1. 确保有某台 7×24 主机（Home Server）的浏览器上已安装 **[脚本猫 (ScriptCat)](https://scriptcat.org/zh-CN/script-show-page/6194)** 插件。
 2. 导入本项目提供的采集端 JS 脚本。
 3. 在脚本代码顶部的配置区，将 Webhook URL 指向你的 HA 地址：
 ```javascript
@@ -52,13 +71,19 @@ const WEBHOOK_URL = "http://[你的HA可访问IP]:8123/api/webhook/gbnpa_router_
 * `油猴采集脚本.js`：运行于浏览器前端，负责高频采样、数据清洗与 JSON 打包。
 * `__init__.py`：HA 集成入口，负责注册 Webhook、管理全局内存字典与分发更新信号。
 * `sensor.py`：实体生成引擎，负责动态发现内网新节点、创建流量传感器并定义数据保护策略。
-* `brand\`：存放 UI 渲染所需的定制化 Logo 与横幅静态资源。
+* `brand/`：存放 UI 渲染所需的定制化 Logo 与横幅静态资源。
 
 ## ⚠️ 注意事项 (Notes)
 
 * 本方案属于纯被动数据监听与重组工具，不涉及对中兴路由器底层固件的修改，不产生任何安全风险。
 * 脚本抓取的 MAC 地址会在 HA 底层自动清洗（移除冒号并转小写）以符合系统规范，但在设备卡片中仍可保留原始信息用于跨插件链路聚合（Connections）。
 * 建议在路由器中为关键设备分配静态 IP，以便 HA 面板中能够更稳定地展示设备标识。
+
+## 📄 协议 (License)
+
+详见对应仓库。
+
+特别声明：**主项目[ZTE-Stat_Max](https://github.com/ucxn/ZTE-Stat_Max)** 保持独立，依然为 GPL 3.0 or later.
 
 ---
 *Authored by 哥哥科技*
