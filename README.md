@@ -13,7 +13,7 @@
 
 中兴路由器Web UI增强插件（作者：哥哥科技），已验证：星云MAX全屋2.5G有线主路由/BE 5100Pro+ ！分别统计上下行流量，查看流量占比速率、上下比值，打击P2P偷上行，支持1000/1024进制，支持Mbps/GiB，可统计内网和公网作对比！设备列表平铺化，大屏可视化一点通，你所要的，都在这里，无需频繁切换页面…
 
-## [点击一键安装](https://github.com/ucxn/ZTE-Stat_Max#%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85)&emsp;&nbsp;&emsp;<a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank"><img src="https://img.shields.io/badge/Bilibili-观看演示视频-FF8EB3?style=for-the-badge&logo=bilibili&logoColor=white" height="72"></a>
+## [点击一键安装](https://github.com/ucxn/ZTE-Stat_Max#%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85)&emsp;&nbsp;&emsp;[![Bilibili](https://img.shields.io/badge/Bilibili-观看演示视频-FF8EB3?style=for-the-badge&logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV1PtR7B8ECC)
 
 [**国内用户**](https://scriptcat.org/zh-CN/script-show-page/6194)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[国际用户](https://greasyfork.org/en/scripts/576199)**
 
@@ -42,9 +42,6 @@
 | :---: | :---: | :---: |
 | ![小米插件](./assets/Mi.png) | ![原生界面](./assets/ZTE.png) | ![增强界面](./assets/me.png) |
 
-<a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank">
-  <img src="https://img.shields.io/badge/Bilibili-观看演示视频-FF8EB3?style=for-the-badge&logo=bilibili&logoColor=white" height="72">
-</a>
 
 ## 🚀 安装指南 (Installation)
 
@@ -60,6 +57,8 @@
     [从GitHub安装](https://github.com/ucxn/ZTE-Stat_Max/releases/latest)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[从GreasyFork安装](https://greasyfork.org/zh-CN/scripts/576199)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[从OpenUserJS自动更新](https://openuserjs.org/scripts/%E5%93%A5%E5%93%A5%E7%A7%91%E6%8A%80/%E4%B8%AD%E5%85%B4%E8%B7%AF%E7%94%B1%E5%99%A8(ZTE)_%E5%A2%9E%E5%BC%BA)
 
     [通过 ScriptCat 脚本猫 安装（直连推荐：**无需科学上网**）](https://scriptcat.org/zh-CN/script-show-page/6194)更新推送
+
+全面更新兄弟项目，接入智能集成&nbsp;⇨&nbsp;<a href="https://github.com/ucxn/ZTE-Stat_HA" target="_blank"><img src="https://img.shields.io/badge/HACS-ZTE--Stat__Home%20Assistant-41BDF5?style=for-the-badge&logo=homeassistant&logoColor=white" alt="ZTE HACS"></a>&nbsp;&nbsp;&nbsp;<a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank"><img src="https://img.shields.io/badge/Bilibili-%E8%A7%82%E7%9C%8B%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91-FF8EB3?style=for-the-badge&logo=bilibili&logoColor=white" alt="Bilibili Video"></a>
     
 3.  在弹出的 Tampermonkey 界面中点击 **“安装”** 或 **“更新”**。
 4.  登录您的中兴路由器 Web 管理后台，*输入管理员密码*，登录成功后 *刷新网页* ,进入“组网管理”界面，脚本将自动生效。
