@@ -1,6 +1,6 @@
 # ZTE-Stat_Max by 哥哥科技
 
-[![Version](https://img.shields.io/badge/version-5.9.9Ge-orange.svg?logo=github&logoColor=white)](https://github.com/ucxn/ZTE-Stat_Max)&emsp;&nbsp;
+[![Version](https://img.shields.io/badge/version-5.9.9.Ge-orange.svg?logo=github&logoColor=white)](https://github.com/ucxn/ZTE-Stat_Max)&emsp;&nbsp;
 [![License: AGPL 3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg?logo=gnu&logoColor=white)](https://www.gnu.org/licenses/gpl-3.0.html)&nbsp;&emsp;
 [![Platform](https://img.shields.io/badge/platform-Web-green.svg?logo=javascript&logoColor=white)](https://scriptcat.org/zh-CN)&nbsp;&emsp;
 [![Integration](https://img.shields.io/badge/集成-Home_Assistant-41BDF5.svg?logo=homeassistant&logoColor=white)](https://github.com/ucxn/ZTE-Stat_HA)
@@ -22,7 +22,7 @@
 ## ✨ 功能特性 (Features)
 
 * **🏠 联动 Home Assistant**：搭配专属的 哥哥科技 中枢集成，支持通过 Webhook 将状态实时推送到 HACS 插件。避免Web只能单端接入，实现多端并发观测。详见兄弟项目：[ZTE-Stat_HA](https://github.com/ucxn/ZTE-Stat_HA)
-* **流量与占比统计**：分别统计单设备的上下行流量，实时查看流量占比速率及上下行比值。
+* **流量与占比统计**：分别统计单设备的上下行流量，实时查看流量占比速率及上下行、内外网比值。
 * **异常上传监控**：支持检测上下行比例，直观标记异常上传，打击 PCDN / P2P 偷跑上行。
 * **精准单位换算**：严格区分网络传输速率与存储容量，支持 1000/1024 双进制，支持 Mbps / GiB 显示。
 * **全局数据对比**：支持内网（局域网代数和）与公网（WAN口）数据大盘统计与直观对比。

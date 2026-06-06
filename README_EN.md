@@ -1,6 +1,6 @@
 # ZTE-Stat_Max by Brother Tech
 
-[![Version](https://img.shields.io/badge/version-5.9.9ge-orange.svg?logo=github&logoColor=white)](https://github.com/ucxn/ZTE-Stat_Max)&emsp;&nbsp;
+[![Version](https://img.shields.io/badge/version-5.9.9.ge-orange.svg?logo=github&logoColor=white)](https://github.com/ucxn/ZTE-Stat_Max)&emsp;&nbsp;
 [![License: AGPL 3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg?logo=gnu&logoColor=white)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 [![Platform](https://img.shields.io/badge/platform-Web--JS-green.svg?logo=javascript&logoColor=white)](https://scriptcat.org/zh-CN)&nbsp;&emsp;
@@ -23,7 +23,7 @@ While the official Web dashboard is stable, its UX design for data visualization
 ## ✨ Features
 
 * **🏠 Home Assistant Integration**: Works seamlessly with the dedicated Brother Tech hub integration to push real-time status updates via Webhooks. This gracefully bypasses the single-session limitation of the native Web UI, enabling stable, concurrent multi-terminal concurrent monitoring. See the brother project: [ZTE-Stat_HA](https://github.com/ucxn/ZTE-Stat_HA).
-* **Traffic & Ratio Statistics**: Tracks the uplink and downlink traffic of individual devices separately, allowing you to view real-time traffic ratio rates and up/down proportions.
+* **Traffic & Ratio Statistics**: Tracks the uplink and downlink traffic of individual devices separately, allowing you to view real-time traffic ratio rates and up/down proportions. Adding LAN/WAN Ratio, etc.
 * **Abnormal Upload Monitoring**: Detects up/down ratios and visually flags abnormal uploads, combating PCDN / P2P bandwidth theft.
 * **Precise Unit Conversion**: Strictly differentiates between network transmission rates and storage capacity. Supports both 1000/1024 base systems and displays in Mbps / GiB.
 * **Global Data Comparison**: Supports aggregate statistics and intuitive comparison between the internal network (LAN algebraic sum) and the public network (WAN port).
