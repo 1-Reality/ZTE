@@ -27,7 +27,7 @@ While the official Web dashboard is stable, its UX design for data visualization
 * **Abnormal Upload Monitoring**: Detects up/down ratios and visually flags abnormal uploads, combating PCDN / P2P bandwidth theft.
 * **Precise Unit Conversion**: Strictly differentiates between network transmission rates and storage capacity. Supports both 1000/1024 base systems and displays in Mbps / GiB.
 * **Global Data Comparison**: Supports aggregate statistics and intuitive comparison between the internal network (LAN algebraic sum) and the public network (WAN port).
-* **High-Precision Integral Traffic Tracking ⏱️ & UI Grid Refactoring 🖥️**
+* **High-Precision Integral Traffic Tracking ⏱️ & UI Grid Refactoring 🖥️**：Fully mobile-friendly
 * **Dual-Track Traffic Comparison**: In addition to displaying the historical total throughput natively provided by the router interface, the frontend independently conducts high-frequency data sampling to track the actual traffic consumed while the page is open. Both metrics are displayed side-by-side for reference. Units are unified to the current session, focusing on the observability of changes.
 * **Customization Support**: Respects network engineering habits by allowing script variables to customize display logic for Base-1000 (Mbps) and Base-1024 (MiB/s).
 * **🛡️ Privacy Protection & UI Optimization**:

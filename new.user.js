@@ -48,7 +48,7 @@
     routerIP: "192.168.5.1", // 路由器内网 IP
     forceMeshMode: 1, // 【Mesh探测模式】0: 官方拓扑驱动 | 1: n秒智能等待(默认) | 2: 强制大包抓取(专治阉割、不出数据)
     uiLayout: 1, // 【面板拓扑结构】 0: 经典版 | 1: 详细紧凑版(驾驶舱美学) | 2: 详细平铺版(报表流美学)
-    injectMode: 1, // 【UI注入模式】 0: 原生侧边栏(1min)| 1: 优先，10秒悬浮舱(D)| 2: 强制模式(30秒后强制霸屏)
+    injectMode: 1, // 【UI注入模式】 0: 原生侧边栏(1min)| 1: 优先，10秒悬浮舱(D)| 2: 联动模式| 3：强制模式
     calcMode: 1, // 1: 上行/下行倍数模式, 0: 上行占总和比例模式
     ratioExtremeUp: 10, // 极端上传判定阈值 (> 1000%)
     ratioWarnUp: 0.07, // 重度上传警告阈值 (> 7%)
@@ -194,7 +194,8 @@
     .geek-label{width:110px;color:#333;font-weight:bold;}.geek-val-box{flex:1;display:flex;gap:15px;margin-left:10px;}.geek-fixed-width{display:inline-block;width:120px;}.geek-right-box{text-align:right;min-width:220px;font-weight:bold;}.c-up{color:#ff4c00;}.c-down{color:#0059fa;}.gege-up-box,.gege-down-box{margin-top:auto!important;margin-bottom:0!important;width:95%;}.gege-ratio-box{margin-top:10px;width:95%;margin-bottom:5px;}.t-row{font-size:12px;font-weight:bold;margin-bottom:2px;display:flex;justify-content:space-between;font-family:Consolas;}.zte-thin-bar{width:100%;height:3px;background:rgba(0,0,0,0.05);border-radius:1.5px;overflow:hidden;}.zte-thin-bar-inner{height:100%;transition:width 0.5s ease-out;}.zte-thin-bar-inner.up{background:#ff4c00;}.zte-thin-bar-inner.down{background:#0059fa;}.gege-ratio-top{display:flex;justify-content:space-between;font-size:12px;font-weight:bold;margin-bottom:2px;}.gege-ratio-bar{width:100%;height:4px;background:#0059fa;border-radius:2px;overflow:hidden;}.gege-ratio-bar-inner{height:100%;background:#ff4c00;transition:width 0.5s ease-out;}.zte-enhance-speed{display:flex;flex-direction:column;gap:6px;width:100%;font-family:Consolas;}
     .zte-bar-wrap{position:relative;width:100%;border-radius:4px;border:1px solid;font-size:13px;font-weight:bold;overflow:hidden;padding:3px 8px;display:flex;justify-content:space-between;align-items:center;z-index:1;box-sizing:border-box;}.zte-bar-wrap span{font-size:inherit;font-weight:inherit;}.zte-bar-up{color:#ff4c00;border-color:rgba(255,76,0,0.3);}.zte-bar-down{color:#0059fa;border-color:rgba(0,89,250,0.3);}.zte-bar-up::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(255,76,0,0.12);width:var(--p-up,0%);transition:width 0.5s;}.zte-bar-down::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(0,89,250,0.12);width:var(--p-down,0%);transition:width 0.5s;}#config-list.gege-list-container{contain:content!important;background-color:#ffffff!important;border-radius:8px!important;border:1px solid #e0e0e0!important;padding:20px 30px!important;box-shadow:0 2px 10px rgba(0,0,0,0.02)!important;margin-top:10px!important;}.gege-section{margin-bottom:10px;}
     .gege-section:last-child{margin-bottom:0;}.gege-list-container .config-title{font-size:16px!important;font-weight:bold!important;color:#333!important;margin:15px 0 10px 0!important;padding-bottom:5px!important;}.gege-list-container .gege-section:first-child .config-title{margin-top:0!important;}.gege-empty-state{color:#999!important;font-size:14px!important;padding:0 0 15px 5px!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:5px!important;}.gege-list-item{background-color:transparent!important;border-bottom:1px solid #f0f0f0!important;padding:15px 10px!important;margin-bottom:0!important;border-radius:0!important;}
-    .gege-list-item:last-child{border-bottom:none!important;}#zte-geek-board{contain:content;background-color:transparent!important;border-left:4px solid #0059fa!important;border-radius:0!important;padding:5px 0 5px 15px!important;margin:10px 0 15px 0!important;box-shadow:none!important;border-bottom:1px solid #f0f0f0!important;font-size:14px;display:flex;flex-direction:column;gap:6px;padding-bottom:15px!important;}#gege-global-overlay #zte-geek-board.geek-frozen-pane{position:sticky!important;top:0px!important;z-index:100!important;background-color:#f3f4f5!important;margin-top:0!important;padding-top:15px!important;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05)!important;border-radius:0 0 8px 8px!important;}.gege-pin{cursor:pointer;font-size:11px;filter:grayscale(100%);opacity:0.5;transition:all 0.2s;margin-left:2px;}.gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}`;
+    .gege-list-item:last-child{border-bottom:none!important;}#zte-geek-board{contain:content;background-color:transparent!important;border-left:4px solid #0059fa!important;border-radius:0!important;padding:5px 0 5px 15px!important;margin:10px 0 15px 0!important;box-shadow:none!important;border-bottom:1px solid #f0f0f0!important;font-size:14px;display:flex;flex-direction:column;gap:6px;padding-bottom:15px!important;}#gege-global-overlay #zte-geek-board.geek-frozen-pane{position:sticky!important;top:0px!important;z-index:100!important;background-color:#f3f4f5!important;margin-top:0!important;padding-top:15px!important;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05)!important;border-radius:0 0 8px 8px!important;}.gege-pin{cursor:pointer;font-size:11px;filter:grayscale(100%);opacity:0.5;transition:transform 0.2s;margin-left:2px;}
+    .gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}#gege-global-overlay{position:fixed;top:0;right:0;bottom:0;background:#f3f4f5;z-index:9999;overflow-y:auto;padding-bottom:50px;left:0;transition:left 0.3s ease;}@media (min-width: 1025px) and (orientation: landscape){#gege-global-overlay{left:max(15%, 240px);}}@media (max-width: 768px){.geek-right-box:has(#gb-wan-zero-up),.geek-right-box:has(#gb-cur-up-vol){display:none!important}.gege-list-item{padding:12px 10px!important}.config-item-box{position:relative!important;flex-direction:column!important;padding-bottom:0!important}.config-item .info,.config-item .logo,.config-item .speed{width:100%!important;border:none!important;padding:0!important;position:static!important}.config-item .dev-intro{min-height:auto!important;justify-content:center!important;padding-right:90px!important}.config-item .logo{padding-bottom:4px!important}.config-item .info{flex-direction:column!important;margin:0 0 6px 0!important;gap:2px!important}.dev-ip{position:absolute!important;top:0!important;right:0!important;font-size:11px!important;background:rgba(0,89,250,0.08);color:#0059fa!important;padding:2px 6px!important;border-radius:4px;font-weight:bold;line-height:1.2;z-index:10;width:auto!important}.dev-number{width:auto!important;margin:0!important;font-size:11px!important}.gege-ratio-box{width:100%!important;margin-top:2px!important;margin-bottom:0!important}.gege-down-box{width:100%!important;margin-top:2px!important}#zte-geek-board{padding:8px!important;gap:0!important;font-size:11.5px!important}.geek-row{height:auto!important;flex-wrap:wrap!important;margin-bottom:4px!important;justify-content:flex-start!important;gap:2px 6px!important;line-height:1.3!important}.geek-label{width:auto!important;min-width:60px!important;font-size:11.5px!important;flex:0 0 auto!important}.geek-val-box{width:auto!important;flex:1 1 0%!important;display:flex!important;flex-wrap:wrap!important;margin-left:0!important;gap:2px 6px!important}.geek-fixed-width{width:auto!important}.geek-right-box{width:100%!important;flex:0 0 100%!important;text-align:left!important;font-size:11.5px!important;margin-top:2px!important;margin-left:0!important}.gege-list-container{padding:8px!important}.zte-enhance-speed{gap:4px!important}}`;
   document.
   head.
   appendChild(st);
@@ -268,9 +269,7 @@
           }
         }
       }
-      let iDW = ol && ol.style.display === 'block' && !ol.querySelector(
-        '.gege-list-item');
-      if (ol && ol.style.display === 'block' && (iD || iDW)) {
+      if (ol && ol.style.display === 'block' && (iD || !ol.querySelector('.gege-list-item'))) {
         bVD(ol, cX);
         window.gegeRenderedMacs = new Set(
           cM);
@@ -429,10 +428,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
     if (S.rTick === 1 || !S.cRT) {
         let rUp = calcStageRatio(S.wTotUp, LUp, hpU);
         let rDn = calcStageRatio(S.wTotDn, LDn, hpD);
-        let pctUp = (rUp * 100).toFixed(2);
-        let pctDn = (rDn * 100).toFixed(2);
-        S.cRT = `<span style="font-weight: bold;"><span style="color: ${rUp > 1.5 ? '#ff4c00' : (rUp > 1.15 ? '#FF9800' : '#4CAF50')};
-        ">${pctUp}%</span>，<span style="color: ${rDn > 1.5 ? '#ff4c00' : (rDn > 1.15 ? '#FF9800' : '#4CAF50')};">${pctDn}%</span></span>`;
+        S.cRT = `<span style="font-weight: bold;"><span style="color: ${rUp > 1.5 ? '#ff4c00' : (rUp > 1.15 ? '#FF9800' : '#4CAF50')};">${(rUp * 100).toFixed(2)}%</span>，<span style="color: ${rDn > 1.5 ? '#ff4c00' : (rDn > 1.15 ? '#FF9800' : '#4CAF50')};">${(rDn * 100).toFixed(2)}%</span></span>`;
     }
     let bd = document.getElementById('zte-geek-board');
     if (!bd) {
@@ -542,12 +538,12 @@ const calcStageRatio = (W, L_int, L_hp) => {
         let cache = it._gege || (it._gege = {});
         let hqU = cln[m] ? cln[m].up : 0;
         let hqD = cln[m] ? cln[m].down : 0;
-        let tN = cache.timeNode || (cache.timeNode = it.querySelector('.gege-online-time'));
+        let tN = cache.timeNode ||= cache.timeNode = it.querySelector('.gege-online-time');
         if (tN && cS.onS > 0) tN.textContent = `在线：${fOT(cS.onS)}`;
         
-        const dI = cache.devIntro || (cache.devIntro = it.querySelector('.dev-intro'));
+        const dI = cache.devIntro ||= cache.devIntro = it.querySelector('.dev-intro');
         if (dI) {
-          let bx = cache.upBox || (cache.upBox = dI.querySelector('.gege-up-box'));
+          let bx = cache.upBox ||= cache.upBox = dI.querySelector('.gege-up-box');
           if (!bx) {
             bx = document.createElement('div'); bx.className = 'gege-up-box';
             bx.innerHTML = `<div class="t-row c-up"><span>↑ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner up"></div></div>`;
@@ -555,16 +551,16 @@ const calcStageRatio = (W, L_int, L_hp) => {
             cache.upBox = bx;
           }
           let p = hpU > 0 ? (hqU * 100 / hpU) : 0;
-          (cache.upVol || (cache.upVol = bx.querySelector('.v-vol'))).textContent = fVD(cS.intUp, cC.offUp);
-          (cache.upPct || (cache.upPct = bx.querySelector('.v-pct'))).textContent = p.toFixed(1) + '%';
-          (cache.upBar || (cache.upBar = bx.querySelector('.zte-thin-bar-inner'))).style.width = Math.min(p, 100) + '%';
+          (cache.upVol ||= cache.upVol = bx.querySelector('.v-vol')).textContent = fVD(cS.intUp, cC.offUp);
+          (cache.upPct ||= cache.upPct = bx.querySelector('.v-pct')).textContent = p.toFixed(1) + '%';
+          (cache.upBar ||= cache.upBar = bx.querySelector('.zte-thin-bar-inner')).style.width = Math.min(p, 100) + '%';
         }
         
-        const inf = cache.info || (cache.info = it.querySelector('.info'));
+        const inf = cache.info ||= cache.info = it.querySelector('.info');
         if (inf) {
-          let ipNode = cache.ipNode || (cache.ipNode = inf.querySelector('.dev-ip'));
+          let ipNode = cache.ipNode ||= cache.ipNode = inf.querySelector('.dev-ip');
           if (ipNode) {
-            let zBadge = cache.zBadge || (cache.zBadge = ipNode.querySelector('.gege-zero-badge'));
+            let zBadge = cache.zBadge ||= cache.zBadge = ipNode.querySelector('.gege-zero-badge');
             if (!zBadge) {
               zBadge = document.createElement('span'); zBadge.className = 'gege-zero-badge gege-box';
               ipNode.style.display = 'flex'; ipNode.style.justifyContent = 'space-between';
@@ -575,7 +571,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
             zBadge.textContent = ((cS.zUC || 0) + (cS.zDC || 0)) < 6 ? "" : `[0估] ${!cS.zEU ? '' : fSV(cS.zEU)}，${!cS.zED ? '' : fSV(cS.zED)}｜${cS.zUC || 0},${cS.zDC || 0}`;
           }
           
-          let rB = cache.rBox || (cache.rBox = inf.querySelector('.gege-ratio-box'));
+          let rB = cache.rBox ||= cache.rBox = inf.querySelector('.gege-ratio-box');
           if (!rB) {
             Array.from(inf.querySelectorAll('.dev-ip:not(.gege-box *)')).slice(1).forEach(n => { n.style.display = 'none'; });
             inf.querySelectorAll('.dev-number:not(.gege-box *)').forEach(n => { n.style.display = 'none'; });
@@ -597,14 +593,14 @@ const calcStageRatio = (W, L_int, L_hp) => {
             tC = bR.toFixed(1) + '%';
           }
           
-          (cache.rBoxPort || (cache.rBoxPort = rB.querySelector('.v-port'))).textContent = CONFIG.portMap[cC.iface] || cC.iface || "未知";
-          (cache.rBoxUp || (cache.rBoxUp = rB.querySelector('.v-interval .c-up'))).textContent = '' + fSV(hqU);
-          (cache.rBoxDn || (cache.rBoxDn = rB.querySelector('.v-interval .c-down'))).textContent = '' + fSV(hqD);
-          let rtP = cache.rtPct || (cache.rtPct = rB.querySelector('.v-rt-pct'));
+          (cache.rBoxPort ||= cache.rBoxPort = rB.querySelector('.v-port')).textContent = CONFIG.portMap[cC.iface] || cC.iface || "未知";
+          (cache.rBoxUp ||= cache.rBoxUp = rB.querySelector('.v-interval .c-up')).textContent = '' + fSV(hqU);
+          (cache.rBoxDn ||= cache.rBoxDn = rB.querySelector('.v-interval .c-down')).textContent = '' + fSV(hqD);
+          let rtP = cache.rtPct ||= cache.rtPct = rB.querySelector('.v-rt-pct');
           rtP.textContent = tC; rtP.style.color = tCol;
-          (cache.rBoxBar || (cache.rBoxBar = rB.querySelector('.gege-ratio-bar-inner'))).style.width = Math.min(bR, 100) + '%';
+          (cache.rBoxBar ||= cache.rBoxBar = rB.querySelector('.gege-ratio-bar-inner')).style.width = Math.min(bR, 100) + '%';
           
-          let dBx = cache.dBox || (cache.dBox = inf.querySelector('.gege-down-box'));
+          let dBx = cache.dBox ||= cache.dBox = inf.querySelector('.gege-down-box');
           if (!dBx) {
             dBx = document.createElement('div'); dBx.className = 'gege-down-box';
             dBx.innerHTML = `<div class="t-row c-down"><span>↓ <span class="v-vol"></span></span><span class="v-pct"></span></div><div class="zte-thin-bar"><div class="zte-thin-bar-inner down"></div></div>`;
@@ -612,14 +608,14 @@ const calcStageRatio = (W, L_int, L_hp) => {
             cache.dBox = dBx;
           }
           let dp = tOD > 0 ? ((cC.offDn || 0) * 100 / tOD) : 0;
-          (cache.dBoxVol || (cache.dBoxVol = dBx.querySelector('.v-vol'))).textContent = fVD(cS.intDn, cC.offDn);
-          (cache.dBoxPct || (cache.dBoxPct = dBx.querySelector('.v-pct'))).textContent = dp.toFixed(1) + '%';
-          (cache.dBoxBar || (cache.dBoxBar = dBx.querySelector('.zte-thin-bar-inner'))).style.width = Math.min(dp, 100) + '%';
+          (cache.dBoxVol ||= cache.dBoxVol = dBx.querySelector('.v-vol')).textContent = fVD(cS.intDn, cC.offDn);
+          (cache.dBoxPct ||= cache.dBoxPct = dBx.querySelector('.v-pct')).textContent = dp.toFixed(1) + '%';
+          (cache.dBoxBar ||= cache.dBoxBar = dBx.querySelector('.zte-thin-bar-inner')).style.width = Math.min(dp, 100) + '%';
         }
         
-        const sp = cache.speed || (cache.speed = it.querySelector('.speed'));
+        const sp = cache.speed ||= cache.speed = it.querySelector('.speed');
         if (sp) {
-          let enh = cache.enh || (cache.enh = sp.querySelector('.zte-enhance-speed'));
+          let enh = cache.enh ||= cache.enh = sp.querySelector('.zte-enhance-speed');
           if (!enh) {
             sp.querySelectorAll('.connect-up, .connect-down').forEach(n => { n.style.display = 'none'; });
             enh = document.createElement('div'); enh.className = 'zte-enhance-speed';
@@ -629,24 +625,23 @@ const calcStageRatio = (W, L_int, L_hp) => {
           }
           let pu = sU > 0 ? (cC.upRate * 100 / sU) : 0,
               pd = sD > 0 ? (cC.dnRate * 100 / sD) : 0,
-              bU = cache.bU || (cache.bU = enh.querySelector('.zte-bar-up')),
-              bD = cache.bD || (cache.bD = enh.querySelector('.zte-bar-down'));
+              bU = cache.bU ||= cache.bU = enh.querySelector('.zte-bar-up'),
+              bD = cache.bD ||= cache.bD = enh.querySelector('.zte-bar-down');
           
           bU.style.setProperty('--p-up', Math.min(pu, 100) + '%');
-          (cache.bUVal || (cache.bUVal = bU.querySelector('.v-val'))).textContent = `🔼 ${fBy(cC.upRate)}`;
-          (cache.bUPct || (cache.bUPct = bU.querySelector('.v-pct'))).textContent = pu.toFixed(1) + '%';
+          (cache.bUVal ||= cache.bUVal = bU.querySelector('.v-val')).textContent = `🔼 ${fBy(cC.upRate)}`;
+          (cache.bUPct ||= cache.bUPct = bU.querySelector('.v-pct')).textContent = pu.toFixed(1) + '%';
           
           bD.style.setProperty('--p-down', Math.min(pd, 100) + '%');
-          (cache.bDVal || (cache.bDVal = bD.querySelector('.v-val'))).textContent = `🔽 ${fBy(cC.dnRate)}`;
-          (cache.bDPct || (cache.bDPct = bD.querySelector('.v-pct'))).textContent = pd.toFixed(1) + '%';
+          (cache.bDVal ||= cache.bDVal = bD.querySelector('.v-val')).textContent = `🔽 ${fBy(cC.dnRate)}`;
+          (cache.bDPct ||= cache.bDPct = bD.querySelector('.v-pct')).textContent = pd.toFixed(1) + '%';
         }
       }
     });
   }
   async function bVD(ol, cX) {
     try {
-      let mB = (window.gegeHiddenDevices && Object.keys(window.gegeHiddenDevices).length > 0) ? '<span style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：智能Mesh适配)</span>' : '',
-        h2 = [],
+      let h2 = [],
         h52 = [],
         h58 = [],
         hW = [];
@@ -659,18 +654,17 @@ const calcStageRatio = (W, L_int, L_hp) => {
           ifc = d.Interface || '',
           oS = parseInt(d.OnlineDuration || d.OnlineTime || d.LeaseTime || 0),
           tS = fOT(oS),
-          tH = `<div class="gege-online-time" style="color: #999; font-size: 12px; font-family: Consolas; margin-top: 4px;">${tS?'在线：'+tS:''}</div>`,
           htm = `<div class="col-md-12 col-xs-12 config-item gege-list-item" data-gege-mac="${m}"><div class="config-item-box" style="display: flex; align-items: stretch;"><div class="col-md-5 col-xs-7 logo" style="width: 33%; display: flex; flex-direction: row; align-items: center;"><div class="dev-logo" style="width: 50px; height: 50px; min-width: 50px; margin-right: 15px; background: url('/jquery/static/img/home/unknown_computer.png') 0% 0% / 50px no-repeat; display: inline-block;"></div><div class="dev-intro" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-height: 100px;">
-<div class="dev-name" style="font-weight: bold; color: #333; font-size: 14px;">${nm}</div>${tH}</div></div><div class="col-md-4 col-xs-5 info" style="width: 27%; display: flex; flex-direction: column; padding: 0 10px; border-right: 1px solid #eee;"><div class="dev-ip" style="color: #666; font-family: Consolas;">${ip}</div><div class="dev-number grey" style="color: #999; font-size: 12px; font-family: Consolas;">MAC：${m}</div></div><div class="col-md-3 col-xs-12 speed" style="width: 40%; display: flex; flex-direction: column; justify-content: center; padding: 0 10px;"></div></div></div>`;
+<div class="dev-name" style="font-weight: bold; color: #333; font-size: 14px;">${nm}</div><div class="gege-online-time" style="color: #999; font-size: 12px; font-family: Consolas; margin-top: 4px;">${tS?'在线：'+tS:''}</div></div></div><div class="col-md-4 col-xs-5 info" style="width: 27%; display: flex; flex-direction: column; padding: 0 10px; border-right: 1px solid #eee;"><div class="dev-ip" style="color: #666; font-family: Consolas;">${ip}</div><div class="dev-number grey" style="color: #999; font-size: 12px; font-family: Consolas;">MAC：${m}</div></div><div class="col-md-3 col-xs-12 speed" style="width: 40%; display: flex; flex-direction: column; justify-content: center; padding: 0 10px;"></div></div></div>`;
         if (['wl0', 'wlan0', 'wlan1', 'wl1'].includes(ifc)) h2.push(htm);
         else if (['wlan5', 'wl4', 'wlan4', 'wl3', 'wlan3'].includes(ifc)) h52.push(htm);
         else if (ifc === 'wl2' || ifc === 'wlan2' || ifc === 'wl5' || (/w/i.test(ifc) && !/wan/i.test(ifc))) h58.push(htm);
         else hW.push(htm);
       });
       requestAnimationFrame(() => {
-        ol.innerHTML = `<div style="padding: 20px; max-width: 1200px; margin: 0 auto; min-height: 100%;"><div id="gege-board-anchor"></div><div id="config-list" class="config-list gege-list-container"><div class="gege-section"><div class="config-title">有线设备${mB}</div>${hW.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（5.2GHz）</div>${h52.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（5.8GHz）</div>${h58.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2.join('')||'<div class="gege-empty-state">没有连接设备</div>'}
-        </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU AGPL-3.0 协议开源，按“原样 (AS IS)”提供，不对其商业合规性、适用性或无错误性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
-        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span></div></div></div></div>`;
+        ol.innerHTML = `<div style="padding: 20px; max-width: 1200px; margin: 0 auto; min-height: 100%;"><div id="gege-board-anchor"></div><div id="config-list" class="config-list gege-list-container"><div class="gege-section"><div class="config-title">有线设备${(window.gegeHiddenDevices && Object.keys(window.gegeHiddenDevices).length > 0) ? '<span style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：智能Mesh适配)</span>' : ''}</div>${hW.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（5.2GHz）</div>${h52.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（5.8GHz）</div>${h58.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2.join('')||'<div class="gege-empty-state">没有连接设备</div>'}
+        </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU Affero GPL v3.0 协议开源，按“原样 (AS IS)”提供，不对其商业合规性、适用性或无错误性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第5(d)及7(b)条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
+        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
       });}
     catch (e) {
       requestAnimationFrame(() => {
@@ -684,7 +678,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
       document.createElement('div');
     b.id = 'gege-floating-btn';
     b.innerHTML = '🛸';
-    b.style.cssText = 'position: fixed; top: 60px; right: 60px; width: 50px; height: 50px; background: linear-gradient(135deg, #0059fa, #00c6ff); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; box-shadow: 0 4px 15px rgba(0,89,250,0.5); cursor: pointer; z-index: 99999; transition: all 0.3s ease; user-select: none;';
+    b.style.cssText = `position: fixed; ${CONFIG.injectMode === 3 ? 'bottom: 60px; right: 60px;' : 'top: 20px; right: 21%;'} width: 50px; height: 50px; background: linear-gradient(135deg, #0059fa, #00c6ff); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; box-shadow: 0 4px 15px rgba(0,89,250,0.5); cursor: pointer; z-index: 99999; transition: transform 0.3s ease; user-select: none;`;
     b.
     onmouseover = () => {
       b.style.transform = 'scale(1.1) rotate(15deg)';
@@ -723,7 +717,6 @@ const calcStageRatio = (W, L_int, L_hp) => {
     if (!o) {
       o = document.createElement('div');
       o.id = 'gege-global-overlay';
-      o.style.cssText = 'position: fixed; top: 0; left: max(15%, 240px); right: 0; bottom: 0; background: #f3f4f5; z-index: 9999; overflow-y: auto; padding-bottom: 50px;';
       document.body.appendChild(o);
     }
     o.style.display = 'block';
@@ -750,7 +743,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
               }
             }
           }
-        }, 4500);
+        }, 8500);
       }
     }
     bVD(o, lCxt ? pr.parseFromString(lCxt, "text/xml") : null).then(() => {
@@ -1036,21 +1029,17 @@ const calcStageRatio = (W, L_int, L_hp) => {
     setTimeout(() => {
       if (!window.gegeTimerStarted && window.startGegePrecisionEngine) window.startGegePrecisionEngine();
     }, 60000);
-    if (CONFIG.injectMode === 1 || CONFIG.injectMode === 2) {
+    if (CONFIG.injectMode === 3 || (CONFIG.injectMode === 1 && +(window.location.hostname.slice(window.location.hostname.lastIndexOf('.') + 1)) < 6)) {
       if (window.createGegeFloatingBtn) window.createGegeFloatingBtn();
     }
-    if (CONFIG.injectMode === 2) {
-      setTimeout(() => {
-        if (window.gegeTogglePanel) window.gegeTogglePanel(!0);
-      }, 30000);
-    }
-    if (CONFIG.injectMode === 0 || CONFIG.injectMode === 1) {
+    if (CONFIG.injectMode !== 3) {
       let dC = 0;
       const mO = setInterval(() => {
         let mC = document.querySelector('.menu_items div');
         if (mC) {
           clearInterval(mO);
           iGM();
+        if (CONFIG.injectMode === 2 && window.createGegeFloatingBtn) window.createGegeFloatingBtn();
         }
         else if (++dC > 200) {
           clearInterval(mO);
