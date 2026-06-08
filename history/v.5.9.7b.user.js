@@ -1,21 +1,21 @@
 // ==UserScript==
-// @name         中兴路由器(ZTE) 增强
-// @name:en      ZTE-Stat_Max
-// @namespace    ucxn
-// @version      5.9.8
-// @description  QQ群 680464365
-// @description:en https://github.com/ucxn/ZTE-Stat_Max
-// @author       哥哥科技
+// @name            中兴路由器(ZTE) 增强
+// @name:en         ZTE-Stat_Max
+// @namespace       ucxn
+// @version         5.9.8
+// @description     QQ群 680464365
+// @description:en  https://github.com/ucxn/ZTE-Stat_Max
+// @author          哥哥科技
 // @noframes
-// @icon         https://scriptcat.org/api/v2/resource/image/duygQktL5QjWtkLc
-// @include      http://10.*.*.*
-// @match        http://192.168.*.*
-// @match        http://zte.home*
-// @grant        none
-// @license      GPL-3.0-or-later
-// @include      http://172.16.*
-// @updateURL    https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
-// @downloadURL  https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
+// @icon            https://scriptcat.org/api/v2/resource/image/duygQktL5QjWtkLc
+// @include         http://10.*.*.*
+// @match           http://192.168.*.*
+// @match           http://zte.home*
+// @grant           none
+// @license         AGPL-3.0-or-later
+// @include         http://172.16.*
+// @updateURL       https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
+// @downloadURL     https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
 
 // ==/UserScript==
 
@@ -133,7 +133,7 @@
             `class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2||'<div class="gege-empty-state">没有连接设备</div>'}</div><div `+
             `class="gege-section"><div class="config-title">无线设备（5.2GHz）</div>${h52||'<div class="gege-empty-state">没有连接设备</div>'}</div><div `+
             `class="gege-section"><div class="config-title">无线设备（5.8GHz）</div>${h58||'<div class="gege-empty-state">没有连接设备</div>'}</div><div `+
-            `class="gege-section"><div class="config-title">有线设备${mB}</div>${hW||'<div class="gege-empty-state">没有连接设备</div>'}</div></div></div>`;}catch(
+            `class="gege-section"><div class="config-title">有线设备${mB}</div>${hW||'<div class="gege-empty-state">没有连接设备</div>'}</div></div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU AGPL-3.0 协议开源，按“原样 (AS IS)”提供，不对其商业合规性、适用性或无错误性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。</div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">主页</a></div></div></div>`;}catch(
             e){ol.innerHTML=`<div style="padding: 20px; color: red;">数据渲染失败: ${escapeHTML(e.message)}</div>`;}}window.createGegeFloatingBtn=function(){if(document.getElementById('gege-floating-btn'))return;let b=
             document.createElement('div');b.id='gege-floating-btn';b.innerHTML='🛸';b.style.cssText=`position: fixed; `+
             `top: 20px; right: 20px; width: 50px; height: 50px; background: `+
