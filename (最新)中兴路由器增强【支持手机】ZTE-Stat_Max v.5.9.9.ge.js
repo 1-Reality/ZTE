@@ -78,11 +78,26 @@
     wTotDn: 0,
     cls: {}, isPinned: !0,
     w2U: 0, w2D: 0, w2TotUp: 0, w2TotDn: 0, w2LT: undefined,
-    hasW2: !1, is5G_149: !1
+    hasW2: !1, is5G_149: !1, fI: 0
   };
+const W_APIS = [
+    { u: '/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh', n: 'OBJ_HOME_BASICINFO_ID', uK: 'WANUpRate', dK: 'WANDownRate', cK: 'AccessDevNum', wE: 'DualWANEnable', wU: 'WANUpRate2', wD: 'WANDownRate2', lU: '/?_type=vueData&_tag=vue_client_data' },
+    { u: '/getpage.lua?pid=1005&nextpage=Internet_WANInfo_lua.lua', n: 'OBJ_TOTALSPEED_ID', uK: 'TotalUpRate', dK: 'TotalDownRate', cK: '_', wE: '_', wU: '_', wD: '_', lU: '/getpage.lua?pid=1005&nextpage=Basic_clients_lua.lua' }
+  ];
+  async function gWT() {
+    if (S.fI === -1) return "";
+    for (; S.fI < W_APIS.length; S.fI++) {
+      try {
+        let r = await fetch(W_APIS[S.fI].u + '&_=' + Date.now());
+        if (r.ok) { let t = await r.text(); if (t.includes('<' + W_APIS[S.fI].n + '>')) return t; }
+      } catch(e) {console.warn(e)}
+    }
+    S.fI = -1; return "";
+  }
+
   const Phys = { p: Object.create(null), wU: undefined, wD: undefined, tU: 0, tD: 0, lT: undefined, _pM: null, _wID: null };
-  let gWUp = (wI) => s2b(wI.WANUpRate);
-  let gWDn = (wI) => s2b(wI.WANDownRate);
+  let gWUp = (wI, k) => s2b(wI[k]);
+  let gWDn = (wI, k) => s2b(wI[k]);
   let isF = !1,
     pr = new DOMParser(),
     lCxt = null;
@@ -208,30 +223,24 @@
   appendChild(st);
   window.gegeRenderedMacs = new Set();
   async function rSD(pWT = null, sT = null) {
-    if (
-      isF && !pWT) return;
+    if (isF && pWT === null) return;
     isF = !0;
-    let n, wX;
+    let n, wT = "";
     try {
-      if (pWT) {
-        wX = pr.parseFromString(pWT,
-          "text/xml");
-        n = sT || performance.now();
+      if (pWT !== null) {
+        wT = pWT; n = sT || performance.now();
+      } else {
+        wT = await gWT(); n = performance.now();
       }
-      else {
-        const wR = await fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${Date.now()}`);
-        if (
-          !wR.ok) return;
-        const wT = await wR.text();
-        n = performance.now();
-        if (!wT.includes('<OBJ_HOME_BASICINFO_ID>')) return;
-        wX = pr.parseFromString(
-          wT, "text/xml");
-      }
+      window.__gLWT = wT; window.__gLWT_t = n; // 保障解耦模式全局缓存不丢失
+      
+      let wX = pr.parseFromString(wT, "text/xml");
       let cX = lCxt ? pr.parseFromString(lCxt, "text/xml") : null;
-      const bIN = wX.querySelector("OBJ_HOME_BASICINFO_ID Instance"), wI = bIN ? pI(bIN) : {};
-      S.hasW2 = wI.DualWANEnable === '1';
-      let cWU = gWUp(wI), cWD = gWDn(wI), cI = Object.create(null);
+      let c = W_APIS[S.fI] || {};
+      const bIN = c.n ? wX.querySelector(`${c.n} Instance`) : null, wI = bIN ? pI(bIN) : {};
+      
+      S.hasW2 = wI[c.wE] === '1';
+      let cWU = gWUp(wI, c.uK), cWD = gWDn(wI, c.dK), cI = Object.create(null);
       if (S.hasW2) {
         let u2 = s2b(wI.WANUpRate2), d2 = s2b(wI.WANDownRate2);
         if (S.w2LT === undefined) S.w2LT = n;
@@ -302,10 +311,11 @@
         S.wLT = n;
       }
       for (const [m, cC] of Object.entries(cI)) {
-        S.cls[m] ??= {
+      S.cls[m] ??= {
           upR: cC.upRate, dnR: cC.dnRate, lUT: n, intUp: 0, intDn: 0,
           uB: CONFIG.readSaveData === 1 ? 0 : cC.offUp, dB: CONFIG.readSaveData === 1 ? 0 : cC.offDn,
-          lU: cC.offUp, lD: cC.offDn, aR: !1, dpU: 0, dpD: 0
+          lU: cC.offUp, lD: cC.offDn, aR: !1, dpU: 0, dpD: 0,
+          oU: cC.offUp, oD: cC.offDn // 真实流量
         };
         let cS = S.cls[m],
           dU = cC.offUp - cS.lU,
@@ -387,20 +397,22 @@ const calcStageRatio = (W, L_int, L_hp) => {
       curHpD = 0,
       cln = {};
     for (const [k, s] of Object.entries(S.cls)) {
-      let cC = cI[k],
-        cU = Math.max(0, (s.lU || 0) - (s.uB || 0)),
-        cD = Math.max(0, (s.lD || 0) - (s.dB || 0));
+      let cC = cI[k];
+      let cU = Math.max(0, (s.lU || 0) - (s.uB || 0));
+      let cD = Math.max(0, (s.lD || 0) - (s.dB || 0));
+      let sessU = CONFIG.readSaveData === 1 ? Math.max(0, cU - (s.oU || 0)) : cU;
+      let sessD = CONFIG.readSaveData === 1 ? Math.max(0, cD - (s.oD || 0)) : cD;
       LUp += s.intUp || 0;
       LDn += s.intDn || 0;
-      hpU += cU;
-      hpD += cD;
+      hpU += sessU; 
+      hpD += sessD;
       if (cC) {
-        curHpU += cU;
-        curHpD += cD;
+        curHpU += sessU; 
+        curHpD += sessD;
         tOD += cC.offDn || 0;
-        abU += cC.offUp || 0;
-        abD += cC.offDn || 0;
       }
+      abU += cC ? (cC.offUp || 0) : (s.lU || 0);
+      abD += cC ? (cC.offDn || 0) : (s.lD || 0);
       cln[k] = {
         up: cU,
         down: cD,
@@ -481,7 +493,6 @@ const calcStageRatio = (W, L_int, L_hp) => {
             };
         }
     }
-    requestAnimationFrame(() => {
     let ol = document.getElementById('gege-global-overlay'),
       iPO = ol && ol.style.display === 'block',
       aC = iPO ? ol : document;
@@ -493,6 +504,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
       let mn = document.querySelector('.el-table') || document.querySelector('.config-item')?.closest('div') || document.querySelector('.main-content');
       if (mn && bd.parentNode !== mn.parentNode) mn.parentNode.insertBefore(bd, mn);
     }
+    requestAnimationFrame(() => {
     let oDC = Object.create(null);
     if (!iPO) {
       const M_RX = /([a-fA-F0-9]{2}[:-]){5}[a-fA-F0-9]{2}/;
@@ -681,7 +693,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
       requestAnimationFrame(() => {
         ol.innerHTML = `<div style="padding: 20px; max-width: 1500px; margin: 0 auto; min-height: 100%;"><div id="gege-board-anchor"></div><div id="config-list" class="config-list gege-list-container"><div class="gege-section"><div class="config-title">有线设备${(window.gegeHiddenDevices && Object.keys(window.gegeHiddenDevices).length > 0) ? '<span style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：智能Mesh适配)</span>' : ''}</div>${hW.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.8GHz':'5.2GHz'}）</div>${h52.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.2GHz':'5.8GHz'}）</div>${h58.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2.join('')||'<div class="gege-empty-state">没有连接设备</div>'}
         </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU Affero GPL v3.0 协议开源，按“原样 (AS IS)”提供，不对其适用性、稳定性、精密度或任何商业场景合规性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
-        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1yfEx6YEq7" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
+        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
       });}
     catch (e) {
       requestAnimationFrame(() => {
@@ -695,7 +707,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
       document.createElement('div');
     b.id = 'gege-floating-btn';
     b.innerHTML = '🛸';
-    b.style.cssText = `position: fixed; ${CONFIG.injectMode === 3 ? 'bottom: 60px; right: 60px;' : 'top: 10px; right: 16%;'} width: 50px; height: 50px; background: linear-gradient(135deg, #0059fa, #00c6ff); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; box-shadow: 0 4px 15px rgba(0,89,250,0.5); cursor: pointer; z-index: 99999; transition: transform 0.3s ease; user-select: none;`;
+    b.style.cssText = `position: fixed; ${CONFIG.injectMode === 3 ? 'bottom: 60px; right: 60px;' : 'top: 20px; right: 16%;'} width: 50px; height: 50px; background: linear-gradient(135deg, #0059fa, #00c6ff); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; box-shadow: 0 4px 15px rgba(0,89,250,0.5); cursor: pointer; z-index: 99999; transition: transform 0.3s ease; user-select: none;`;
     b.
     onmouseover = () => {
       b.style.transform = 'scale(1.1) rotate(15deg)';
@@ -758,7 +770,8 @@ const calcStageRatio = (W, L_int, L_hp) => {
       .then(t => {
       if (!S.is5G_149 && /<ParaName>ChannelInUsed<\/ParaName><ParaValue>(149|1[5-9]\d)<\/ParaValue>/.test(t)) {
             S.is5G_149 = !0;
-            window.gegeForceUIRedraw = !0;
+            document.getElementById('gege-global-overlay')?.style.display === 'block' && 
+            bVD(document.getElementById('gege-global-overlay'), lCxt ? pr.parseFromString(lCxt, "text/xml") : null);
         }}).catch(e => {console.warn("[哥哥科技] 5.8G彩蛋探测异常:", e);});
       if (CONFIG.forceMeshMode === 1) {
         setTimeout(() => {
@@ -975,14 +988,23 @@ const calcStageRatio = (W, L_int, L_hp) => {
     window.gegeEngineRunning = !0;
     try {
       const ts = Date.now();
-      let wT = null, wST = null, cDC = window.gegeLastDevCount;
+      let wT = "", wST = null, cDC = window.gegeLastDevCount;
       if (fW) {
-        const wR = await fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${ts}`);
-        if (!wR.ok) throw new Error();
-        wT = await wR.text(); wST = performance.now();
-        if (!wT.includes('<OBJ_HOME_BASICINFO_ID>')) throw new Error();
-        cDC = parseInt(pI(pr.parseFromString(wT, "text/xml").querySelector("OBJ_HOME_BASICINFO_ID Instance") || {}).AccessDevNum || -1) || -1;
+        wT = await gWT();
+        wST = performance.now();
+        let c = W_APIS[S.fI] || {}; // 读取锁定的字典结构
+        let bN = c.n ? pr.parseFromString(wT, "text/xml").querySelector(`${c.n} Instance`) : null;
+        cDC = parseInt((bN ? pI(bN) : {})[c.cK] || -1) || -1;
+        try {
+            const wR = await fetch(`/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh&_=${ts}`);
+            if (wR.ok) {
+                wT = await wR.text();
+                cDC = parseInt(pI(pr.parseFromString(wT, "text/xml").querySelector("OBJ_HOME_BASICINFO_ID Instance") || {}).AccessDevNum || -1) || -1;
+            }
+        } catch(e) {console.warn(e)}
+        wST = performance.now();
       }
+
       let lT = "", lF = "";
       if (CONFIG.forceMeshMode === 2) {
         const liR = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${ts}`);
@@ -1021,7 +1043,8 @@ const calcStageRatio = (W, L_int, L_hp) => {
         }
       }
       else {
-        const lR = await fetch(`/?_type=vueData&_tag=vue_client_data&_=${ts}`);
+        let cApi = W_APIS[S.fI >= 0 ? S.fI : 0]; // 联动锁：WAN定江山，LAN随其后
+        const lR = await fetch(`${cApi.lU}&_=${ts}`);
         lT = await lR.text();
         if (lT.includes('<OBJ_CLIENTS_ID>')) {
           let mM = lT.match(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g) || [];
@@ -1030,17 +1053,14 @@ const calcStageRatio = (W, L_int, L_hp) => {
       }
       if (cDC !== window.gegeLastDevCount || lF !== window.gegeLastLanFingerprint) {
         if (CONFIG.forceMeshMode !== 2) {
-          const tR = await fetch(`/?_type=vueData&_tag=vue_topo_data&_=${ts}`);
-          if (!tR.ok) throw new Error();
-          let tJ;
+          let mDC = 0;
           try {
-            tJ = JSON.parse(await tR.text());
-          }
-          catch (e) {
-            console.warn("[哥哥科技] 拓扑接口异常:", e.message);
-            tJ = {};
-          }
-          let mDC = tJ.agentlay1?.reduce((s, a) => s + (parseInt(a.accdevCount) || 0), 0) || 0;
+            const tR = await fetch(`/?_type=vueData&_tag=vue_topo_data&_=${ts}`);
+            if (tR.ok) {
+              let tJ = JSON.parse(await tR.text());
+              mDC = tJ.agentlay1?.reduce((s, a) => s + (parseInt(a.accdevCount) || 0), 0) || 0;
+            }
+          } catch(e) {console.warn(`[哥哥科技] Mesh狙击失败`, e.message);}
           if (mDC !== window.gegeLastMeshDevCount) {
             window.gegeLastMeshDevCount = mDC;
             window.gegeForceUIRedraw = !0;
