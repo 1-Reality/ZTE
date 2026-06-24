@@ -24,7 +24,6 @@
 // @run-at          document-start
 // @updateURL       https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
 // @downloadURL     https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
-
 // ==/UserScript==
 
 (function () {
@@ -517,22 +516,9 @@ const calcStageRatio = (W, L_int, L_hp) => {
     requestAnimationFrame(() => {
     if (!S.oDC || S._domRebuilt) {
         S.oDC = Object.create(null);
-        if (!iPO) {
-          let aI = aC.getElementsByClassName('config-item');
-          for (let n of aI) {
-            let mN = n.getElementsByClassName('dev-number')[0], mM = mN ? mN.textContent.match(/([a-fA-F0-9]{2}[:-]){5}[a-fA-F0-9]{2}/) : null;
-            if (mM) S.oDC[mM[0].toLowerCase().replace(/-/g, ':')] = n;
-          }
-        } else {
-          let gI = aC.getElementsByClassName('gege-list-item');
-          for (let n of gI) {
-            let m = n.getAttribute('data-gege-mac');
-            if (m) S.oDC[m] = n;
-          }
-        }
         S._domRebuilt = false;
     }
-    let oDC = Object.create(null);
+    let oDC = S.oDC;
     if (!iPO) {
       const M_RX = /([a-fA-F0-9]{2}[:-]){5}[a-fA-F0-9]{2}/;
       let aI = aC.querySelectorAll('.config-item');
@@ -1050,7 +1036,7 @@ async function fPP() {
       if (CONFIG.forceMeshMode === 2) {
         const liR = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${ts}`);
         if (liR.ok) {
-          let iI_arr = "",
+          let iI_arr = [],
             nHD = {},
             dC = 0;
           parseXml(await liR.text(), "OBJ_LAN_INFO_ID").forEach(d => {
