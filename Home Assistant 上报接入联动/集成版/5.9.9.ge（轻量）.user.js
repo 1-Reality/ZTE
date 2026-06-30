@@ -424,7 +424,7 @@ const calcStageRatio = (W, L_int, L_hp) => {
       },
       devices: cln
     });
-     S.rTick = ((S.rTick || 0) + 1) & 31;
+     S.rTick = ((S.rTick || 0) + 1) & 63;
     if (S.rTick === 1 || !S.cRT) {
         let rUp = calcStageRatio(S.wTotUp, LUp, hpU);
         let rDn = calcStageRatio(S.wTotDn, LDn, hpD);
