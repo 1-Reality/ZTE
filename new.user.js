@@ -2,7 +2,7 @@
 // @name            中兴路由器增强 ZTE-Stat_Max
 // @name:en         ZTE-Stat_Max
 // @namespace       ucxn
-// @version         5.9.9.U
+// @version         5.9.9.X
 // @description     哥哥科技 QQ群 680464365
 // @description:en  https://github.com/ucxn/ZTE-Stat_Max
 // @author          哥哥科技 space.bilibili.com/501430041
@@ -11,10 +11,9 @@
 // @icon            https://scriptcat.org/api/v2/resource/image/PD6xhxddlUESIwAV
 // @include         /^https?:\/\/10(\.[0-9]{1,3}){3}(:\d+)?\/.*$/
 // @include         http://192.168.*.*
-// @match           http://zte.home*
+// @match           *://zte.home/*
 // @include         http://172.16.*
 // @include         https://192.168.*.*
-// @match           https://zte.home*
 // @include         https://172.16.*
 // @exclude         *://*/cgi-bin/luci*
 // @grant           GM_setValue
@@ -46,6 +45,7 @@
     ratioThreshold: 7, // (仅calcMode=0时有效) 上传占比报警阈值(%)
     lanRefreshInterval: 3, // 【新增】LAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
     wanRefreshInterval: 3, // WAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
+    信号强度刷新周期: 4, // 信号强度刷新周期，单位：帧
     宽带最大外网上行速率: 3e8,
     宽带最大外网下行速率: 24e8, // 配置外网最大上传|下载比特(bit/bps)速率，请略微大于真实值；500兆为5e8，一千兆1e9
     盲漫游: undefined, //也就是无线交换机（AP/有线桥接）模式，无线设备被主路由识别为有线设备则设置1
@@ -79,10 +79,12 @@
     wTotDn: 0,
     cls: {}, isPinned: !0,
     w2U: 0, w2D: 0, w2TotUp: 0, w2TotDn: 0, w2LT: undefined,
-    hasW2: !1, is5G_149: !1, fI: 0,
+    hasW2: !1, is5G_149: !1, fI: 0, RSSI频率修正: undefined,
     _domRebuilt: !1, _lastPanelState: null, oDC: null,
     Warn_MS: 0, Force_MS: 0, _RST: !1,
-    aWu: 0, aWd: 0, lwTU: 0, lwTD: 0
+    aWu: 0, aWd: 0, lwTU: 0, lwTD: 0, cSnap: null,
+    总上行图: new Float64Array(8192), 总下行图: new Float64Array(8192), 总图点数: 0,
+    wMaxU: 0, wMaxD: 0, wMinU: Infinity, wMinD: Infinity, 图表拖: null, 图表待画: 0
   };
 const W_APIS = [
     { u: '/?_type=vueData&_tag=vue_home_device_data_no_update_sess&IF_OP=refresh', n: 'OBJ_HOME_BASICINFO_ID', uK: 'WANUpRate', dK: 'WANDownRate', cK: 'AccessDevNum', wE: 'DualWANEnable', wU: 'WANUpRate2', wD: 'WANDownRate2', lU: '/?_type=vueData&_tag=vue_client_data' },
@@ -93,6 +95,7 @@ const W_APIS = [
     S.Warn_MS = S.Force_MS + CONFIG.报告时间 * 60000;
     S.Force_MS += CONFIG.自动导出 * 60000;
   };S.calcTime((typeof GM_getValue !== 'undefined' && GM_getValue('gege_reset_ms')) ? (GM_getValue('gege_reset_ms') + CONFIG.时区补偿) : Date.now() + CONFIG.时区补偿);
+  if (typeof GM_getValue !== 'undefined' && GM_getValue('gege_reset_ms') >= Math.min(S.Warn_MS, S.Force_MS)) S.calcTime(S.Force_MS - CONFIG.自动导出 * 60000 + 1000 + CONFIG.时区补偿);
   async function gWT() {
     if (S.fI === -1) return "";
     for (; S.fI < W_APIS.length; S.fI++) {
@@ -108,7 +111,7 @@ const W_APIS = [
   let gWUp = (wI, k) => s2b(wI[k]);
   let gWDn = (wI, k) => s2b(wI[k]);
   let isF = !1,
-    lCxt = null;
+    lCxt = null, lCxtT = null;
   const oOp = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function () {
     this.
@@ -118,7 +121,7 @@ const W_APIS = [
           this.responseType === 'text') {
           let t = this.responseText;
           if (t && (t.includes('<OBJ_CLIENTS_ID>') || t.includes('<OBJ_HOME_BASICINFO_ID>'))) {
-            if (t.includes('<OBJ_CLIENTS_ID>')) lCxt = t;
+            if (t.includes('<OBJ_CLIENTS_ID>')) { lCxt = t; lCxtT = null; }
             if (window.startGegePrecisionEngine) {
               window.startGegePrecisionEngine();
             }
@@ -226,7 +229,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
     .zte-bar-wrap{position:relative;width:100%;border-radius:4px;border:1px solid;font-size:13px;font-weight:bold;overflow:hidden;padding:3px 8px;display:flex;justify-content:space-between;align-items:center;z-index:1;box-sizing:border-box;}.zte-bar-wrap span{font-size:inherit;font-weight:inherit;}.zte-bar-up{color:#ff4c00;border-color:rgba(255,76,0,0.3);}.zte-bar-down{color:#0059fa;border-color:rgba(0,89,250,0.3);}.zte-bar-up::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(255,76,0,0.12);width:var(--p-up,0%);transition:width 0.5s;}.zte-bar-down::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(0,89,250,0.12);width:var(--p-down,0%);transition:width 0.5s;}#config-list.gege-list-container{contain:content!important;background-color:#ffffff!important;border-radius:8px!important;border:1px solid #e0e0e0!important;padding:20px 30px!important;box-shadow:0 2px 10px rgba(0,0,0,0.02)!important;margin-top:10px!important;}.gege-section{margin-bottom:10px;}
     .gege-section:last-child{margin-bottom:0;}.gege-list-container .config-title{font-size:16px!important;font-weight:bold!important;color:#333!important;margin:15px 0 10px 0!important;padding-bottom:5px!important;}.gege-list-container .gege-section:first-child .config-title{margin-top:0!important;}.gege-empty-state{color:#999!important;font-size:14px!important;padding:0 0 15px 5px!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:5px!important;}.gege-list-item{background-color:transparent!important;border-bottom:1px solid #f0f0f0!important;padding:15px 10px!important;margin-bottom:0!important;border-radius:0!important;}
     .gege-list-item:last-child{border-bottom:none!important;}#zte-geek-board{contain:content;background-color:transparent!important;border-left:4px solid #0059fa!important;border-radius:0!important;padding:5px 0 5px 15px!important;margin:10px 0 15px 0!important;box-shadow:none!important;border-bottom:1px solid #f0f0f0!important;font-size:14px;display:flex;flex-direction:column;gap:6px;padding-bottom:15px!important;}#gege-global-overlay #zte-geek-board.geek-frozen-pane{position:sticky!important;top:0px!important;z-index:100!important;background-color:#f3f4f5!important;margin-top:0!important;padding-top:15px!important;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05)!important;border-radius:0 0 8px 8px!important;}.gege-pin{cursor:pointer;font-size:11px;filter:grayscale(100%);opacity:0.5;transition:transform 0.2s;margin-left:2px;}
-    .gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}#gege-global-overlay{position:fixed;top:0;right:0;bottom:0;background:#f3f4f5;z-index:9999;overflow-y:auto;padding-bottom:50px;left:0;transition:left 0.3s ease;}@media (min-width: 1025px) and (orientation: landscape){#gege-global-overlay{left:max(15%, 240px);}}@media (max-width: 768px){.geek-right-box:has(#gb-wan-zero-up),.geek-right-box:has(#gb-cur-up-vol){display:none!important}.gege-list-item{padding:12px 10px!important}.config-item-box{position:relative!important;flex-direction:column!important;padding-bottom:0!important}.config-item .info,.config-item .logo,.config-item .speed{width:100%!important;border:none!important;padding:0!important;position:static!important}.config-item .dev-intro{min-height:auto!important;justify-content:center!important;padding-right:90px!important}.config-item .logo{padding-bottom:4px!important}.config-item .info{flex-direction:column!important;margin:0 0 6px 0!important;gap:2px!important}.dev-ip{position:absolute!important;top:0!important;right:0!important;font-size:11px!important;background:rgba(0,89,250,0.08);color:#0059fa!important;padding:2px 6px!important;border-radius:4px;font-weight:bold;line-height:1.2;z-index:10;width:auto!important}.dev-number{width:auto!important;margin:0!important;font-size:11px!important}.gege-ratio-box{width:100%!important;margin-top:2px!important;margin-bottom:0!important}.gege-down-box{width:100%!important;margin-top:2px!important}#zte-geek-board{padding:8px!important;gap:0!important;font-size:11.5px!important}.geek-row{height:auto!important;flex-wrap:wrap!important;margin-bottom:4px!important;justify-content:flex-start!important;gap:2px 6px!important;line-height:1.3!important}.geek-label{width:auto!important;min-width:60px!important;font-size:11.5px!important;flex:0 0 auto!important}.geek-val-box{width:auto!important;flex:1 1 0%!important;display:flex!important;flex-wrap:wrap!important;margin-left:0!important;gap:2px 6px!important}.geek-fixed-width{width:auto!important}.geek-right-box{width:100%!important;flex:0 0 100%!important;text-align:left!important;font-size:11.5px!important;margin-top:2px!important;margin-left:0!important}.gege-list-container{padding:8px!important}.zte-enhance-speed{gap:4px!important}}`;
+    .gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}#gege-global-overlay{position:fixed;top:0;right:0;bottom:0;background:#f3f4f5;z-index:9999;overflow-y:auto;padding-bottom:50px;left:0;transition:left 0.3s ease;}@media (min-width: 1025px) and (orientation: landscape){#gege-global-overlay{left:max(15%, 240px);}}@media (max-width: 768px){.geek-right-box:has(#gb-wan-zero-up),.geek-right-box:has(#gb-cur-up-vol){display:none!important}.gege-list-item{padding:12px 10px!important}.config-item-box{position:relative!important;flex-direction:column!important;padding-bottom:0!important}.config-item .info,.config-item .logo,.config-item .speed{width:100%!important;border:none!important;padding:0!important;position:static!important}.config-item .dev-intro{min-height:auto!important;justify-content:center!important;padding-right:90px!important}.config-item .logo{padding-bottom:4px!important}.config-item .info{flex-direction:column!important;margin:0 0 6px 0!important;gap:2px!important}.dev-ip{position:absolute!important;top:0!important;right:0!important;font-size:11px!important;background:rgba(0,89,250,0.08);color:#0059fa!important;padding:2px 6px!important;border-radius:4px;font-weight:bold;line-height:1.2;z-index:10;width:auto!important}.dev-number{width:auto!important;margin:0!important;font-size:11px!important}.gege-ratio-box{width:100%!important;margin-top:2px!important;margin-bottom:0!important}.gege-down-box{width:100%!important;margin-top:2px!important}#zte-geek-board{padding:8px!important;gap:0!important;font-size:11.5px!important}.geek-row{height:auto!important;flex-wrap:wrap!important;margin-bottom:4px!important;justify-content:flex-start!important;gap:2px 6px!important;line-height:1.3!important}.geek-label{width:auto!important;min-width:60px!important;font-size:11.5px!important;flex:0 0 auto!important}.geek-val-box{width:auto!important;flex:1 1 0%!important;display:flex!important;flex-wrap:wrap!important;margin-left:0!important;gap:2px 6px!important}.geek-fixed-width{width:auto!important}.geek-right-box{width:100%!important;flex:0 0 100%!important;text-align:left!important;font-size:11.5px!important;margin-top:2px!important;margin-left:0!important}.gege-list-container{padding:8px!important}.zte-enhance-speed{gap:4px!important}}#zte-geek-board{position:relative!important;overflow:visible!important;}#gege-speed-chart{position:absolute;z-index:25;box-sizing:border-box;cursor:move;user-select:none;touch-action:none;container-type:inline-size;}#gege-speed-chart canvas{display:block;width:100%;height:100%;}.gege-chart-head,.gege-chart-foot{position:absolute;left:clamp(28px,8%,36px);right:8px;display:flex;align-items:center;pointer-events:none;font:bold clamp(9px,2.1cqw,11px) system-ui,sans-serif;white-space:nowrap;overflow:hidden;}.gege-chart-head{top:2px;color:#111;gap:8px;}.gege-chart-head [data-gc="range"]{color:#666;font-weight:normal;overflow:hidden;text-overflow:ellipsis;margin-left:auto;}.gege-chart-foot{bottom:4px;justify-content:flex-start;gap:clamp(3px,1.1cqw,12px);}.gege-chart-foot span{min-width:0;overflow:hidden;text-overflow:ellipsis;}.gc-up{color:#ff4c00;flex:0 1 auto;}.gc-down{color:#0b5;flex:0 1 auto;}.gc-extra{color:#666;text-align:right;margin-left:auto;flex:1 1 0;min-width:0;}#gege-speed-chart .gege-chart-resize{position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;border-right:3px solid #0059fa;border-bottom:3px solid #0059fa;cursor:nwse-resize;border-radius:2px;}@media (max-width:768px){#gege-speed-chart{left:210px!important;width:calc(100% - 220px)!important;height:96px!important;}}`;
   document.
   head.
   appendChild(st);
@@ -242,12 +245,14 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         wT = await gWT(); n = performance.now();
       }
       window.__gLWT = wT; window.__gLWT_t = n; // 保障解耦模式全局缓存不丢失
+      let lanNow = lCxtT ?? n;
       
       let c = W_APIS[S.fI] || {};
       const wI = c.n ? parseXml(wT, c.n)[0] || {} : {};
       
       S.hasW2 = wI[c.wE] === '1';
       let cWU = gWUp(wI, c.uK), cWD = gWDn(wI, c.dK), cI = Object.create(null);
+      记总速率图(cWU, cWD);
       if (S.hasW2) {
         let u2 = s2b(wI.WANUpRate2), d2 = s2b(wI.WANDownRate2);
         if (S.w2LT === undefined) S.w2LT = n;
@@ -299,9 +304,11 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
       }
       if (iD) {
         for (let m in S.cls) if (!cI[m]) {
-          S.cls[m].intUp += S.cls[m].upR * (n - S.cls[m].lUT) * 0.0005;
-          S.cls[m].intDn += S.cls[m].dnR * (n - S.cls[m].lUT) * 0.0005;
-          S.cls[m].upR = S.cls[m].dnR = 0;
+          let cS = S.cls[m], ms = lanNow - cS.lUT;
+          if (ms > CONFIG.lanRefreshInterval * 1000) ms = CONFIG.lanRefreshInterval * 1000;
+          cS.intUp += cS.upR * ms * 0.0005;
+          cS.intDn += cS.dnR * ms * 0.0005;
+          cS.upR = cS.dnR = 0;
         }
       }
       if (ol && ol.style.display === 'block' && (iD || !ol.querySelector('.gege-list-item'))) {
@@ -321,73 +328,90 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         else if (cWD > 0) { let wED = cWD * 0.5 * CONFIG.wanRefreshInterval; S.wTotDn += wED; S.wZED = (S.wZED || 0) + wED; S.wZEDC = (S.wZEDC || 0) + 1; }
         S.wLT = n;
       }
-      if (CONFIG.readSaveData === 2 && !S.snapLoaded) { try { let sp = typeof GM_getValue !== 'undefined' ? GM_getValue('ha_snapshot') : null; S.snap = sp || {}; if(sp && sp.global) { S.wTotUp = S.wTotUp === 0 ? sp.global.wan_up || 0 : S.wTotUp; S.wTotDn = S.wTotDn === 0 ? sp.global.wan_down || 0 : S.wTotDn; } } catch(e){console.warn(e)} S.snapLoaded = !0; }
-      for (const [m, cC] of Object.entries(cI)) {
-        let spD = (CONFIG.readSaveData === 2 && S.snap && S.snap.devices && S.snap.devices[m]) || null;
-        S.cls[m] ??= {
-          upR: cC.upRate, dnR: cC.dnRate, lUT: n, 
-          intUp: spD ? (spD.integral_up || 0) : 0, intDn: spD ? (spD.integral_down || 0) : 0,
-          uB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offUp - (spD.up || 0) : cC.offUp), 
-          dB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offDn - (spD.down || 0) : cC.offDn),
-          lU: cC.offUp, lD: cC.offDn, aR: 0, dpU: 0, dpD: 0,
-          oU: cC.offUp, oD: cC.offDn, hU: new Float64Array(32), hD: new Float64Array(32), hIdx: 0, ifc: cC.iface // 真实流量
-        };
-        let cS = S.cls[m],
-          dU = cC.offUp - cS.lU,
-          dD = cC.offDn - cS.lD;
-
-        if (dU < 0 || dD < 0) {
-          if (dU < 0) { cS.uB += dU; cS.oU += dU; cS.dpU = cS.lU; }
-          if (dD < 0) { cS.dB += dD; cS.oD += dD; cS.dpD = cS.lD; }
-          cS.aR = 3;}
-        else if (cS.aR === 3) {
-          if (dU > 0 || dD > 0) {
-          if (cS.dpU && dU > cS.dpU * 0.975 && cS.dpD && dD > cS.dpD * 0.975) {
-            if (dU < cS.dpU * 1.1 || dU < cS.dpU + CONFIG.宽带最大外网上行速率 * CONFIG.lanRefreshInterval) {
-              cS.uB += cS.dpU; cS.oU += cS.dpU;
-              } else {
-                cS.uB += dU; cS.oU += dU;}
-             if (dD < cS.dpD * 1.1 || dD < cS.dpD + CONFIG.宽带最大外网下行速率 * CONFIG.lanRefreshInterval) {
-              cS.dB += cS.dpD; cS.oD += cS.dpD;
-              } else {cS.dB += dD; cS.oD += dD;
-              }
-            cS.aR = 2; 
-            if (CONFIG.盲漫游 === undefined) CONFIG.盲漫游 = 1;
-            } else {
-              cS.aR = 0; 
-            }
-            cS.dpU = 0; cS.dpD = 0; 
+      if (CONFIG.readSaveData === 2 && !S.snapLoaded) { try { let sp = typeof GM_getValue !== 'undefined' ? GM_getValue('ha_snapshot') : null; S.snap = sp && sp.timestamp > (typeof GM_getValue !== 'undefined' ? (GM_getValue('gege_reset_ms', 0) || 0) : 0) ? sp : {}; if(S.snap.global) { S.wTotUp = S.wTotUp === 0 ? S.snap.global.wan_up || 0 : S.wTotUp; S.wTotDn = S.wTotDn === 0 ? S.snap.global.wan_down || 0 : S.wTotDn; } } catch(e){console.warn(e)} S.snapLoaded = !0; }
+      let 本轮刷新接口 = lCxtT === null ? null : new Set(),
+        有Mesh = 本轮刷新接口 !== null && (CONFIG.forceMeshMode === 2 || window.gegeLastMeshDevCount > 0);
+      for (let m in cI) {
+        let cC = cI[m], cS = S.cls[m];
+        if (!cS) {
+          let spD = (CONFIG.readSaveData === 2 && S.snap && S.snap.devices && S.snap.devices[m]) || null;
+          cS = S.cls[m] = {
+            upR: cC.upRate, dnR: cC.dnRate, lUT: lanNow,
+            intUp: spD ? (spD.integral_up || 0) : 0, intDn: spD ? (spD.integral_down || 0) : 0,
+            uB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offUp - (spD.up || 0) : cC.offUp),
+            dB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offDn - (spD.down || 0) : cC.offDn),
+            lU: cC.offUp, lD: cC.offDn, aR: 0, dpU: 0, dpD: 0,
+            oU: cC.offUp, oD: cC.offDn, hU: new Float64Array(32), hD: new Float64Array(32), hIdx: 0, ifc: cC.iface // 真实流量
+          };
+        } else {
+          let dU = cC.offUp - cS.lU, dD = cC.offDn - cS.lD;
+          if (dU < 0 || dD < 0) {
+            if (dU < 0) { cS.uB += dU; cS.oU += dU; cS.dpU = cS.lU; }
+            if (dD < 0) { cS.dB += dD; cS.oD += dD; cS.dpD = cS.lD; }
+            cS.aR = 3;
           }
+          else if (cS.aR === 3) {
+            if (dU > 0 || dD > 0) {
+              if (cS.dpU && dU > cS.dpU * 0.975 && cS.dpD && dD > cS.dpD * 0.975) {
+                if (dU < cS.dpU * 1.1 || dU < cS.dpU + CONFIG.宽带最大外网上行速率 * CONFIG.lanRefreshInterval) {
+                  cS.uB += cS.dpU; cS.oU += cS.dpU;
+                } else {
+                  cS.uB += dU; cS.oU += dU;
+                }
+                if (dD < cS.dpD * 1.1 || dD < cS.dpD + CONFIG.宽带最大外网下行速率 * CONFIG.lanRefreshInterval) {
+                  cS.dB += cS.dpD; cS.oD += cS.dpD;
+                } else {
+                  cS.dB += dD; cS.oD += dD;
+                }
+                cS.aR = 2;
+                if (CONFIG.盲漫游 === undefined) CONFIG.盲漫游 = 1;
+              } else {
+                cS.aR = 0;
+              }
+              cS.dpU = 0; cS.dpD = 0;
+            }
+          }
+          else if (cS.aR > 0) cS.aR--;
+          if (cS.aR !== 3 && cS.ifc !== cC.iface) {
+            if (CONFIG.盲漫游 !== 0) cS.aR = 1;
+            if (CONFIG.盲漫游 === 1) cS.aR = 2;
+          }
+          cS.ifc = cC.iface;
         }
-        else if (cS.ifc !== cC.iface) { if (CONFIG.盲漫游 !== 0) cS.aR = 1; if (CONFIG.盲漫游 === 1) cS.aR = 2;}
-        else if (cS.aR > 0) { cS.aR--; }
-        cS.ifc = cC.iface;
-        
+
         if (cC.upRate > 6e8) { cSU -= cC.upRate; cC.upRate = 3; }
         else if (cS.aR === 2) { cSU -= cC.upRate; cC.upRate = 2; }
         else if (cS.aR === 1 && cC.upRate > CONFIG.宽带最大外网上行速率 * 1.2 && cC.upRate > 32e7) { cSU -= cC.upRate; cC.upRate = 1; }
         if (cC.dnRate > 24e8) { cSD -= cC.dnRate; cC.dnRate = 3; }
         else if (cS.aR === 2) { cSD -= cC.dnRate; cC.dnRate = 2; }
         else if (cS.aR === 1 && (cC.dnRate > CONFIG.宽带最大外网下行速率 || cC.dnRate > 36e7)) { cSD -= cC.dnRate; cC.dnRate = 1; }
-          cS.onS = cC.onSec;
-
-        if (cC.upRate !== cS.upR || cC.dnRate !== cS.dnR) {
-          let ms = n - cS.lUT;
+        if (本轮刷新接口 && cS.aR === 0 && (!有Mesh || !window.gegeHiddenDevices[m]) && (cC.upRate !== cS.upR || cC.dnRate !== cS.dnR)) 本轮刷新接口.add(cC.iface);
+        cS.onS = cC.onSec;
+        cS.lU = cC.offUp;
+        cS.lD = cC.offDn;
+      }
+      for (let m in cI) {
+        let cC = cI[m], cS = S.cls[m];
+        if (cC.upRate !== cS.upR || cC.dnRate !== cS.dnR || cS.aR === 0 && (!有Mesh || !window.gegeHiddenDevices[m]) && 本轮刷新接口?.has(cC.iface)) {
+          let ms = lanNow - cS.lUT;
           if (cS.upR > 0) { cS.intUp += (cS.upR + cC.upRate) * ms * 0.0005; }
           else if (cC.upRate > 0) { let eU = cC.upRate * CONFIG.lanRefreshInterval * 0.5; cS.intUp += eU; cS.zEU = (cS.zEU || 0) + eU; cS.zUC = (cS.zUC || 0) + 1; }
           if (cS.dnR > 0) { cS.intDn += (cS.dnR + cC.dnRate) * ms * 0.0005; }
           else if (cC.dnRate > 0) { let eD = cC.dnRate * CONFIG.lanRefreshInterval * 0.5; cS.intDn += eD; cS.zED = (cS.zED || 0) + eD; cS.zDC = (cS.zDC || 0) + 1; }
           cS.upR = cC.upRate;
           cS.dnR = cC.dnRate;
-          cS.lUT = n;
+          cS.lUT = lanNow;
         }
-        cS.lU = cC.offUp;
-        cS.lD = cC.offDn;
       }
       S.lt = n;
       S.wInstUp = cWU;
       S.wInstDn = cWD;
       rUI(cWU, cWD, cSU, cSD, cI);
+      if (document.getElementById('gege-global-overlay')?.style.display === 'block') {
+        S.lTick = ((S.lTick || 0) + 1) & ((CONFIG.信号强度刷新周期 << 3) - 1);
+        if ((S.lTick & (CONFIG.信号强度刷新周期 - 1)) === 1 && CONFIG.forceMeshMode !== 2) fRSSI();
+        if (S.lTick === 1) fPHY();
+      }
     }
     catch (e) {
       console.error("[哥哥科技] 周期采样中断:", e);
@@ -414,8 +438,8 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
       `"脚本下载: https://scriptcat.org/users/203510"`
 
     ].join('\r\n'))(
-      typeof GM_getValue !== 'undefined' ? GM_getValue('ha_snapshot', {}) : {}, 
-      Date.now(), 
+      S.cSnap || {}, 
+      S.cSnap?.timestamp || Date.now(), 
       (CONFIG.readSaveData === 2 && typeof GM_getValue !== 'undefined' ? GM_getValue('gege_reset_ms', null) : null) || performance.timeOrigin || Date.now()
     );
   }
@@ -427,6 +451,7 @@ function doSettle(nowMs) {
     let w = window.open('about:blank', '_blank');
     if (w) w.document.write(`<!DOCTYPE html><html><head><title>流量结算备份</title></head><body style="background:#f3f4f5;font-family:system-ui,sans-serif;padding:40px 20px;color:#333;"><div style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.05);max-width:850px;margin:0 auto;"><h2 style="color:#0059fa;margin-top:0;border-bottom:2px solid #f0f0f0;padding-bottom:15px;">本次数据结算周期已结束</h2><p style="font-size:14px;line-height:1.7;color:#555;"><b>哥哥科技提示您：</b>请点击下方下载按钮将 CSV 报表保存到本地。<br>若下载失败，请点击复制按钮，新建文本文档粘贴后将拓展名改为 .csv 即可。</p><button id="dl-btn" style="background:#0059fa;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-weight:bold;cursor:pointer;margin-right:10px;">📥 再次下载 CSV</button><button id="cp-btn" style="background:#4caf50;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-weight:bold;cursor:pointer;">📋 一键复制内容</button><div style="background:#282c34;color:#abb2bf;padding:15px;border-radius:8px;overflow-x:auto;margin-top:20px;"><pre id="csv-data" style="margin:0;font-size:13px;line-height:1.5;">${csv}</pre></div></div><script>document.getElementById('dl-btn').onclick=function(){let b=new Blob([document.getElementById('csv-data').textContent],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='哥哥科技_路由器统计数据补下_${nowMs}.csv';a.click();};document.getElementById('cp-btn').onclick=function(){let t=document.createElement('textarea');t.value=document.getElementById('csv-data').textContent;document.body.appendChild(t);t.select();try{document.execCommand('copy');alert('复制成功！');}catch(e){alert('复制失败，请手动全选复制');}document.body.removeChild(t);};</script></body></html>`);
     GM_setValue('gege_reset_ms', nowMs);
+    GM_setValue('ha_snapshot', { timestamp: nowMs, global: {}, devices: {} }); S.snap = {}; S.cSnap = null;
     S.wTotUp = S.wTotDn = S.w2TotUp = S.w2TotDn = 0; // 内存原地清零
     for (let k in S.cls) { let s = S.cls[k]; s.intUp = s.intDn = 0; s.uB = s.oU = s.lU; s.dB = s.oD = s.lD; s.hU.fill(0); s.hD.fill(0); } // 内存原地清零底表
     document.getElementById('gb-w-bnr')?.remove(); // 预警横幅
@@ -456,6 +481,129 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
           s += SPRK[v > 0 ? Math.min(7, Math.max(1, ((v / maxVal) * 7) | 0)) : 0];
         }
         return s;
+      }
+      const gRSvg = c => `<svg viewBox="0 0 100 100" width="45" height="45" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(180 50 50)"><path d="M18 82V36Q18 32 22 32H28V24Q28 20 32 20H38V14Q38 10 42 10H58Q62 10 62 14V20H68Q72 20 72 24V32H78Q82 32 82 36V82Q82 86 78 86H22Q18 86 18 82Z" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="4" stroke-linejoin="round"/><g stroke="${c}" stroke-width="3.2" stroke-linecap="round"><path d="M31 54V76"/><path d="M36.5 54V76"/><path d="M42 54V76"/><path d="M47.5 54V76"/><path d="M53 54V76"/><path d="M58.5 54V76"/><path d="M64 54V76"/><path d="M69.5 54V76"/></g></g></svg>`;
+      const gSFPSvg = c => `<svg viewBox="0 0 100 100" width="45" height="45" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="24" width="80" height="52" rx="4" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="4"/><path d="M18 32H38V38H62V32H82V68H65V62H35V68H18Z" fill="none" stroke="${c}" stroke-width="4" stroke-linejoin="round"/><path d="M27 43H73M27 50H73M27 57H73" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round" opacity=".55"/></svg>`;
+      const gWSvg = r => {
+        let c = r >= -23 ? '#4caf50' : r >= -34 ? '#9c27b0' : '#0059fa';
+        if (r >= -40) return `<svg viewBox="0 0 100 100" width="45" height="45"><path d="M 50,85 L 10,35 A 65,65 0 0,1 90,35 Z" fill="${c}"/></svg>`;
+        if (r >= -45) return `<svg viewBox="0 0 100 100" width="45" height="45"><path d="M 50,85 L 10,35 A 65,65 0 0,1 90,35 Z" fill="#e0e0e0"/><path d="M 50,85 L 18,45 A 50,50 0 0,1 82,45 Z" fill="${c}"/></svg>`;
+        if (r >= -49) return `<svg viewBox="0 0 100 100" width="45" height="45"><path d="M 50,85 L 10,35 A 65,65 0 0,1 90,35 Z" fill="#e0e0e0"/><path d="M 50,85 L 23,51 A 43,43 0 0,1 77,51 Z" fill="${c}"/></svg>`;
+        if (r >= -55) return `<svg viewBox="0 0 100 100" width="45" height="45"><circle cx="50" cy="80" r="9" fill="${c}"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/></svg>`;
+        if (r >= -60) return `<svg viewBox="0 0 100 100" width="45" height="45"><circle cx="50" cy="80" r="9" fill="${c}"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></svg>`;
+        if (r >= -67) return `<svg viewBox="0 0 100 100" width="45" height="45"><circle cx="50" cy="80" r="9" fill="${c}"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></svg>`;
+        if (r >= -70) return `<svg viewBox="0 0 100 100" width="45" height="45"><circle cx="50" cy="80" r="7" fill="none" stroke="#ff9800" stroke-width="5"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></svg>`;
+        if (r >= -74) return `<svg viewBox="0 0 100 100" width="45" height="45"><g transform="translate(-15, 0)"><circle cx="50" cy="80" r="7" fill="none" stroke="#ffb300" stroke-width="5"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></g><text x="70" y="86" fill="#ffb300" font-weight="900" font-size="48" font-family="sans-serif">!</text></svg>`;
+        if (r >= -77) return `<svg viewBox="0 0 100 100" width="45" height="45"><g transform="translate(-15, 0)"><circle cx="50" cy="80" r="7" fill="none" stroke="#ff4c00" stroke-width="5"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></g><text x="70" y="86" fill="#ff4c00" font-weight="900" font-size="48" font-family="sans-serif">!</text></svg>`;
+        if (r >= -84) return `<svg viewBox="0 0 100 100" width="45" height="45"><g transform="translate(-15, 0)"><circle cx="50" cy="80" r="7" fill="none" stroke="#ff4c00" stroke-width="5"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#e0e0e0" stroke-width="7" stroke-linecap="round"/></g><text x="65" y="86" fill="#ff4c00" font-weight="900" font-size="44" font-family="sans-serif">?</text></svg>`;
+        return `<svg viewBox="0 0 100 100" width="45" height="45"><g transform="translate(-15, 0)"><circle cx="50" cy="80" r="7" fill="none" stroke="#ff4c00" stroke-width="5"/><path d="M 30,58 A 28,28 0 0,1 70,58" fill="none" stroke="#ff4c00" stroke-width="7" stroke-linecap="round" opacity="0.3"/><path d="M 12,38 A 54,54 0 0,1 88,38" fill="none" stroke="#ff4c00" stroke-width="7" stroke-linecap="round" opacity="0.3"/></g><text x="65" y="80" fill="#ff4c00" font-weight="900" font-size="35" font-family="sans-serif">✖</text></svg>`;
+      };
+      const gPSvg = s => {
+        if (s === 4) return `<svg viewBox="0 0 100 100" width="45" height="45"><rect x="15" y="15" width="70" height="65" rx="5" fill="#cfd8dc" stroke="#90a4ae" stroke-width="4"/><path d="M 25,25 L 75,25 L 75,60 L 60,60 L 60,75 L 40,75 L 40,60 L 25,60 Z" fill="#263238"/><g fill="#ffca28"><rect x="30" y="25" width="2.5" height="18"/><rect x="35" y="25" width="2.5" height="18"/><rect x="40" y="25" width="2.5" height="18"/><rect x="45" y="25" width="2.5" height="18"/><rect x="52.5" y="25" width="2.5" height="18"/><rect x="57.5" y="25" width="2.5" height="18"/><rect x="62.5" y="25" width="2.5" height="18"/><rect x="67.5" y="25" width="2.5" height="18"/></g><circle cx="21" cy="73" r="3.5" fill="#4caf50"/><circle cx="79" cy="73" r="3.5" fill="#ffb300"/></svg>`;
+        if (s > 0 && s < 4) return gRSvg(['', '#E7B05C', '#5394CC', '#4CAF50'][s]);
+        if (s === 5 || s === 6) return gSFPSvg(s === 5 ? '#5394CC' : '#9C27B0');
+        return `<img src="https://greasyfork.s3.us-east-2.amazonaws.com/pdcy1uwpyn2g8l1vw4mgtlj0cww4" width="45" height="45">`;
+      };
+      function uRSSI(dL) {
+        if (dL) dL.forEach(d => { if (d.Active === '1' && d.MACAddress && +d.Rssi && S.cls[nM(d.MACAddress)]) S.cls[nM(d.MACAddress)].rssi = +d.Rssi; });
+        if (!S.oDC) return;
+        for (let m in S.cls) {
+          let cS = S.cls[m], it = S.oDC[m], rRs = cS.rssi, lRs = cS.lRs ?? rRs;
+          if (!it || !rRs) continue;
+          if ([-23, -34, -40, -55].some(t => (rRs >= t) !== (lRs >= t)) && Math.abs(rRs - lRs) + (cS.dbC || 0) <= 4) {
+            rRs = lRs; cS.dbC = ((cS.dbC || 0) + 1) & 7;
+          } else { cS.dbC = 0; cS.lRs = rRs; }
+          let cache = it._gege || (it._gege = {}), logo = cache.logo ??= it.querySelector('.dev-logo');
+          if (logo) { logo.style.background = 'none'; logo.innerHTML = gWSvg(rRs); }
+          let dI = cache.devIntro ??= it.querySelector('.dev-intro'), rN = dI && (cache.rssiNode ??= dI.querySelector('.gege-rssi'));
+          if (rN) { let p = Math.round((cS.rssi - (cS.ifc === 'wl0' || cS.ifc === 'wl1' || cS.ifc === 'wlan0' || cS.ifc === 'wlan1' ? S.RSSI频率修正 || 0 : 0)) * 1.6666666666666667 + 133.33333333333333); rN.innerHTML = `<span style="color:${p < 0 ? '#ff4c00' : 'inherit'}">${p}%</span>, ${cS.rssi}`; }
+        }
+      }
+      function uPHY(dL) {
+        if (dL) for (let m in S.cls) {
+          let cS = S.cls[m];
+          if (!/^eth\d+$/i.test(cS.ifc || '')) continue;
+          let d = dL.find(x => x.EthPortAliasName === 'LAN' + cS.ifc.slice(3) || x._InstID === cS.ifc);
+          cS.phy = +(d?.EthPortSpeed || 0);
+        }
+        if (!S.oDC) return;
+        for (let m in S.cls) {
+          let cS = S.cls[m], it = S.oDC[m];
+          if (!it || !/^eth\d+$/i.test(cS.ifc || '')) continue;
+          let cache = it._gege || (it._gege = {}), logo = cache.logo ??= it.querySelector('.dev-logo');
+          if (logo) { logo.style.background = 'none'; logo.innerHTML = gPSvg(cS.phy); }
+        }
+      }
+      async function fRSSI() {
+        try { let r = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${Date.now()}`); if (r.ok) uRSSI(parseXml(await r.text(), "OBJ_LAN_INFO_ID")); }
+        catch (e) { console.warn("[哥哥科技] RSSI 拉取失败:", e.message); }
+      }
+      async function fPHY() {
+        try { let r = await fetch(`/?_type=vueData&_tag=vue_internet_ethport_data&_=${Date.now()}`); if (r.ok) uPHY(parseXml(await r.text(), "OBJ_ETHPORT_INFO_ID")); }
+        catch (e) { console.warn("[哥哥科技] PHY 拉取失败:", e.message); }
+      }
+      function 记总速率图(u, d) {
+        u = u || 0; d = d || 0;
+        let i = S.总图点数 & 8191;
+        S.总上行图[i] = u; S.总下行图[i] = d; S.总图点数++;
+        if (u > S.wMaxU) S.wMaxU = u; if (d > S.wMaxD) S.wMaxD = d;
+        if (u > 0 && u < S.wMinU) S.wMinU = u; if (d > 0 && d < S.wMinD) S.wMinD = d;
+      }
+      function 初始化总速率图(bd) {
+        let box = bd.querySelector('#gege-speed-chart');
+        if (box) return box;
+        box = document.createElement('div'); box.id = 'gege-speed-chart';
+        box.innerHTML = '<canvas></canvas><div class="gege-chart-head"><b data-gc="meta"></b><span data-gc="range"></span></div><div class="gege-chart-foot"><span class="gc-up" data-gc="up"></span><span class="gc-down" data-gc="down"></span><span class="gc-extra" data-gc="extra"></span></div><div class="gege-chart-resize" title="缩放"></div>';
+        bd.appendChild(box);
+        let bw = bd.clientWidth || 1800, w = Math.max(320, Math.min(650, bw * .30));
+        box.style.left = Math.max(520, bw * .52) + 'px'; box.style.top = '2px'; box.style.width = w + 'px'; box.style.height = '112px';
+        const 起手 = (e, 模式) => { e.preventDefault(); S.图表拖 = { 模式, x: e.clientX, y: e.clientY, l: box.offsetLeft, t: box.offsetTop, w: box.offsetWidth, h: box.offsetHeight }; box.setPointerCapture?.(e.pointerId); };
+        box.addEventListener('pointerdown', e => { if (!e.target.classList.contains('gege-chart-resize')) 起手(e, '拖'); });
+        box.querySelector('.gege-chart-resize').addEventListener('pointerdown', e => 起手(e, '缩'));
+        box.addEventListener('pointermove', e => {
+          let g = S.图表拖; if (!g) return;
+          if (g.模式 === '拖') { box.style.left = Math.max(330, g.l + e.clientX - g.x) + 'px'; box.style.top = Math.max(0, g.t + e.clientY - g.y) + 'px'; }
+          else { box.style.width = Math.max(260, g.w + e.clientX - g.x) + 'px'; box.style.height = Math.max(88, g.h + e.clientY - g.y) + 'px'; }
+          if (!S.图表待画) { S.图表待画 = 1; requestAnimationFrame(() => { S.图表待画 = 0; 画总速率图(bd); }); }
+        });
+        box.addEventListener('pointerup', () => S.图表拖 = null); box.addEventListener('pointercancel', () => S.图表拖 = null); box.addEventListener('lostpointercapture', () => S.图表拖 = null);
+        return box;
+      }
+      function 画总速率图(bd) {
+        let box = 初始化总速率图(bd), cv = box.querySelector('canvas'), W = box.clientWidth | 0, H = box.clientHeight | 0, R = window.devicePixelRatio || 1;
+        if (W < 40 || H < 40) return;
+        if (cv.width !== (W * R | 0) || cv.height !== (H * R | 0)) { cv.width = W * R | 0; cv.height = H * R | 0; cv.style.width = '100%'; cv.style.height = '100%'; }
+        let x = cv.getContext('2d'); x.setTransform(R,0,0,R,0,0); x.clearRect(0,0,W,H);
+        let l = 34, r = 8, t = 20, b = 25, gw = W - l - r, gh = H - t - b, n = Math.min(S.总图点数, 8000), st = S.总图点数 - n, ym = 1, su = 0, sd = 0;
+        for (let k = 0; k < n; k++) { let j = (st + k) & 8191, u = S.总上行图[j], d = S.总下行图[j]; if (u > ym) ym = u; if (d > ym) ym = d; su += u; sd += d; }
+        x.fillStyle = 'rgba(255,255,255,.58)'; x.strokeStyle = 'rgba(0,89,250,.88)'; x.lineWidth = 1.5; x.beginPath(); x.roundRect ? x.roundRect(.5,.5,W-1,H-1,8) : x.rect(.5,.5,W-1,H-1); x.fill(); x.stroke();
+        x.setLineDash([4,4]); x.strokeStyle = 'rgba(0,89,250,.45)'; x.lineWidth = 1;
+        for (let i = 5; i--; ) { let y = t + gh * i / 4; x.beginPath(); x.moveTo(l,y); x.lineTo(W-r,y); x.stroke(); }
+        for (let i = 7; i--; ) { let xx = l + gw * i / 6; x.beginPath(); x.moveTo(xx,t); x.lineTo(xx,H-b); x.stroke(); }
+        x.setLineDash([]);
+        let li = (S.总图点数 - 1) & 8191, au = n ? (n === 8000 ? su * .000125 : su / n) : 0, ad = n ? (n === 8000 ? sd * .000125 : sd / n) : 0;
+        (box._gcMeta ??= box.querySelector('[data-gc="meta"]')).textContent = `采样:${window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3}s  点:${S.总图点数}`;
+        let rg = box._gcRange ??= box.querySelector('[data-gc="range"]'), rs = `峰↑${fBy(S.wMaxU)} ↓${fBy(S.wMaxD)}  谷↑${S.wMinU < Infinity ? fBy(S.wMinU) : '--'} ↓${S.wMinD < Infinity ? fBy(S.wMinD) : '--'}`; rg.textContent = rs; rg.title = rs;
+        (box._gcUp ??= box.querySelector('[data-gc="up"]')).textContent = `发 ${n ? fBy(S.总上行图[li]) : fBy(0)}`;
+        (box._gcDown ??= box.querySelector('[data-gc="down"]')).textContent = `收 ${n ? fBy(S.总下行图[li]) : fBy(0)}`;
+        (box._gcExtra ??= box.querySelector('[data-gc="extra"]')).textContent = `均↑${fBy(au)} ↓${fBy(ad)}`;
+        const 画线 = (arr, col) => {
+          if (!n) return;
+          x.strokeStyle = col; x.lineWidth = 2.4; x.beginPath();
+          let bins = Math.max(1, Math.min(n, gw | 0)), first = !0;
+          if (bins === n) {
+            for (let k = 0; k < n; k++) { let xx = l + (n > 1 ? gw * k / (n - 1) : gw), yy = H - b - (arr[(st + k) & 8191] / ym) * gh; first ? (x.moveTo(xx, yy), first = !1) : x.lineTo(xx, yy); }
+          } else {
+            for (let q = 0; q < bins; q++) {
+              let a = q * n / bins | 0, z = (q + 1) * n / bins | 0, mn = Infinity, mx = -Infinity, mi = a, ma = a; if (z <= a) z = a + 1;
+              for (let k = a; k < z; k++) { let v = arr[(st + k) & 8191]; if (v < mn) { mn = v; mi = k; } if (v > mx) { mx = v; ma = k; } }
+              if (mi <= ma) { let xx = l + (n > 1 ? gw * mi / (n - 1) : gw), yy = H - b - (mn / ym) * gh; first ? (x.moveTo(xx, yy), first = !1) : x.lineTo(xx, yy); if (ma !== mi) { xx = l + gw * ma / (n - 1); yy = H - b - (mx / ym) * gh; x.lineTo(xx, yy); } }
+              else { let xx = l + gw * ma / (n - 1), yy = H - b - (mx / ym) * gh; first ? (x.moveTo(xx, yy), first = !1) : x.lineTo(xx, yy); xx = l + gw * mi / (n - 1); yy = H - b - (mn / ym) * gh; x.lineTo(xx, yy); }
+            }
+          }
+          x.stroke();
+        };
+        画线(S.总上行图, '#ff1b00'); 画线(S.总下行图, '#006400');
       }
 
   function rUI(wU, wD, sU, sD, cI) {
@@ -491,32 +639,32 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       s.hU[s.hIdx] = cC ? cC.upRate : 0;
       s.hD[s.hIdx] = cC ? cC.dnRate : 0;
     }
+    S.cSnap = {
+        timestamp: Date.now(),
+        global: {
+            wan_up: S.wTotUp, wan_down: S.wTotDn,
+            lan_integral_up: LUp, lan_integral_down: LDn,
+            lan_high_up: hpU, lan_high_down: hpD,
+            lan_off_up: abU, lan_off_down: abD
+        },
+        devices: Object.keys(S.cls).reduce((acc, k) => {
+            let s = S.cls[k], cC = cI[k];
+            acc[k] = {
+                up: Math.max(0, (s.lU || 0) - (s.uB || 0)),
+                down: Math.max(0, (s.lD || 0) - (s.dB || 0)),
+                integral_up: s.intUp || 0,
+                integral_down: s.intDn || 0,
+                status: (s.aR === 1 || s.aR === 2) ? "off" : (CONFIG.portMap[cC?.iface] || cC?.iface || "未知接口"),
+                name: cC?.name || k, ip: cC?.ip || "",
+                raw_up: cC?.offUp || 0, raw_down: cC?.offDn || 0
+            };
+            return acc;
+        }, {})
+    };
     if (typeof GM_setValue !== 'undefined' && S.rTick === 1) {
         S.haTick = ((S.haTick || 0) + 1) & 7;
         if (S.haTick === 1) {
-            try {   GM_setValue('ha_snapshot', {
-                    timestamp: Date.now(),
-                    global: {
-                        wan_up: S.wTotUp, wan_down: S.wTotDn,
-                        lan_integral_up: LUp, lan_integral_down: LDn,
-                        lan_high_up: hpU, lan_high_down: hpD,
-                        lan_off_up: abU, lan_off_down: abD
-                    },
-                    devices: Object.keys(S.cls).reduce((acc, k) => {
-                        let s = S.cls[k], cC = cI[k];
-                        acc[k] = {
-                            up: Math.max(0, (s.lU || 0) - (s.uB || 0)),
-                            down: Math.max(0, (s.lD || 0) - (s.dB || 0)),
-                            integral_up: s.intUp || 0,
-                            integral_down: s.intDn || 0,
-                            status: s.aR ? "off" : (CONFIG.portMap[cC?.iface] || cC?.iface || "未知接口"),
-                            name: cC?.name || k, ip: cC?.ip || "",
-                            raw_up: cC?.offUp || 0, raw_down: cC?.offDn || 0
-                        };
-                        return acc;
-                    }, {})
-                });
-            } catch(e) { console.warn(e); }}
+            try { GM_setValue('ha_snapshot', S.cSnap); } catch(e) { console.warn(e); }}
         let nowMs = Date.now();
         if (nowMs >= S.Force_MS && !S._RST) {
             doSettle(nowMs);
@@ -534,8 +682,8 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
     S.rTick = ((S.rTick || 0) + 1) & 7;
     if (S.rTick === 1 || !S.cRT) {
-        S.aWu = (S.wTotUp - (S.lwTU || S.wTotUp)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 2); S.lwTU = S.wTotUp;
-        S.aWd = (S.wTotDn - (S.lwTD || S.wTotDn)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 2); S.lwTD = S.wTotDn;
+        S.aWu = (S.wTotUp - (S.lwTU || S.wTotUp)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 3); S.lwTU = S.wTotUp;
+        S.aWd = (S.wTotDn - (S.lwTD || S.wTotDn)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 3); S.lwTD = S.wTotDn;
         if (S.hasW2) {
             let rU = S.w2TotUp > 0 ? (S.wTotUp / S.w2TotUp) : (S.wTotUp > 0 ? Infinity : 0), rD = S.w2TotDn > 0 ? (S.wTotDn / S.w2TotDn) : (S.wTotDn > 0 ? Infinity : 0);
             let fR = (r) => r === Infinity ? '∞' : (r > 1 ? r.toFixed(2) + 'x' : (r * 100).toPrecision(3) + '%');
@@ -616,6 +764,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         }
         S._domRebuilt = false;
         S._lastPanelState = iPO;
+        uRSSI(); uPHY();
       }
       let oDC = S.oDC; 
       if (bd.parentNode) {
@@ -654,6 +803,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         } else if (CONFIG.lanPortMode !== 1 || Phys.wU === undefined) {
             if (pb) pb.style.display = 'none'; if (pv) pv.style.display = 'none';
         }
+        画总速率图(bd);
         if (bd.querySelector('#gb-ratio-display')) {
           bd.querySelector('#gb-cur-up-vol').textContent = `🔼 ${fV(curHpU)}`;
           bd.querySelector('#gb-cur-down-vol').textContent = `🔽 ${fV(curHpD)}`;
@@ -793,8 +943,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         let m = nM(d.MACAddress),
           tS = fOT(+(d.OnlineDuration || d.OnlineTime || d.LeaseTime || 0)),
           ifc = d.Interface || '',
-          htm = `<div class="col-md-12 col-xs-12 config-item gege-list-item" data-gege-mac="${m}"><div class="config-item-box" style="display: flex; align-items: stretch;"><div class="col-md-5 col-xs-7 logo" style="width: 33%; display: flex; flex-direction: row; align-items: center;"><div class="dev-logo" style="width: 50px; height: 50px; min-width: 50px; margin-right: 15px; background: url('/jquery/static/img/home/unknown_computer.png') 0% 0% / 50px no-repeat; display: inline-block;"></div><div class="dev-intro" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-height: 100px;">
-<div class="dev-name" style="font-weight: bold; color: #333; font-size: 14px;">${escapeHTML(d.AliasName || d.HostName || d.DisplayedPictureName || '未知设备')}</div><div class="gege-online-time" style="color: #999; font-size: 12px; font-family: Consolas; margin-top: 4px;">${tS?'在线：'+tS:''}</div></div></div><div class="col-md-4 col-xs-5 info" style="width: 27%; display: flex; flex-direction: column; padding: 0 10px; border-right: 1px solid #eee;"><div class="dev-ip" style="color: #666; font-family: Consolas;">${escapeHTML(d.IPAddress || '')}</div><div class="dev-number grey" style="color: #999; font-size: 12px; font-family: Consolas;">MAC：${m}</div></div><div class="col-md-3 col-xs-12 speed" style="width: 40%; display: flex; flex-direction: column; justify-content: center; padding: 0 10px;"></div></div></div>`;
+          htm = `<div class="col-md-12 col-xs-12 config-item gege-list-item" data-gege-mac="${m}"><div class="config-item-box" style="display: flex; align-items: stretch;"><div class="col-md-5 col-xs-7 logo" style="width: 33%; display: flex; flex-direction: row; align-items: center;"><div class="dev-logo" style="width: 50px; height: 50px; min-width: 50px; margin-right: 15px; background: url('/jquery/static/img/home/unknown_computer.png') 0% 0% / 50px no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center;"></div><div class="dev-intro" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-height: 100px;"><div style="display: flex; justify-content: space-between; align-items: baseline; width: 95%;"><div class="dev-name" style="font-weight: bold; color: #333; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; margin-right: 8px;">${escapeHTML(d.AliasName || d.HostName || d.DisplayedPictureName || '未知设备')}</div><div class="gege-rssi" style="font-size: 12px; font-weight: bold; color: #666; font-family: Consolas; white-space: nowrap; flex-shrink: 0;"></div></div><div class="gege-online-time" style="color: #999; font-size: 12px; font-family: Consolas; margin-top: 4px;">${tS?'在线：'+tS:''}</div></div></div><div class="col-md-4 col-xs-5 info" style="width: 27%; display: flex; flex-direction: column; padding: 0 10px; border-right: 1px solid #eee;"><div class="dev-ip" style="color: #666; font-family: Consolas;">${escapeHTML(d.IPAddress || '')}</div><div class="dev-number grey" style="color: #999; font-size: 12px; font-family: Consolas;">MAC：${m}</div></div><div class="col-md-3 col-xs-12 speed" style="width: 40%; display: flex; flex-direction: column; justify-content: center; padding: 0 10px;"></div></div></div>`;
         if (['wl0', 'wlan0', 'wlan1', 'wl1'].includes(ifc)) h2.push(htm);
         else if (['wlan5', 'wl4', 'wlan4', 'wl3', 'wlan3'].includes(ifc)) h52.push(htm);
         else if (ifc === 'wl2' || ifc === 'wlan2' || ifc === 'wl5' || (/w/i.test(ifc) && !/wan/i.test(ifc))) h58.push(htm);
@@ -859,6 +1008,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       document.body.appendChild(o);
     }
     o.style.display = 'block';
+    S.lTick = 0;
     if (!window.gegeBActivated) {
       window.gegeBActivated = !0;
       clearTimeout(window.gegeMasterTimer);
@@ -878,11 +1028,14 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       fetch(`/?_type=vueData&_tag=wlanConfig_data&_=${Date.now()}`)
       .then(r => r.text())
       .then(t => {
-      if (!S.is5G_149 && /<ParaName>ChannelInUsed<\/ParaName><ParaValue>(149|1[5-9]\d)<\/ParaValue>/.test(t)) {
-            S.is5G_149 = !0;
-            document.getElementById('gege-global-overlay')?.style.display === 'block' && 
-            bVD(document.getElementById('gege-global-overlay'));
-        }}).catch(e => {console.warn("[哥哥科技] 5.8G彩蛋探测异常:", e);});
+        let 信道 = [...t.matchAll(/<ParaName>ChannelInUsed<\/ParaName><ParaValue>(\d+)<\/ParaValue>/g)].map(v => +v[1]);
+        S.RSSI频率修正 = 20 * Math.log10((5000 + 5 * (信道.find(v => v >= 32 && v <= 177) || 44)) / (2407 + 5 * (信道.find(v => v >= 1 && v <= 13) || 9)));
+        uRSSI();
+        if (!S.is5G_149 && 信道.some(v => v >= 149 && v <= 177)) {
+          S.is5G_149 = !0;
+          document.getElementById('gege-global-overlay')?.style.display === 'block' && bVD(document.getElementById('gege-global-overlay'));
+        }
+      }).catch(e => { S.RSSI频率修正 = 20 * Math.log10(5220 / 2452); uRSSI(); console.warn("[哥哥科技] 无线信道彩蛋探测异常:", e); });
       if (CONFIG.forceMeshMode === 1) {
         setTimeout(() => {
           if (window.gegeRenderedMacs.size === 0) {
@@ -1043,8 +1196,9 @@ async function fPP() {
   window.triggerGegeMeshSniper = async function () {
     try {
       const liR = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${Date.now()}`);
-      let nHD = {};
-      parseXml(await liR.text(), "OBJ_LAN_INFO_ID").forEach(d => {
+      let nHD = {}, dL = parseXml(await liR.text(), "OBJ_LAN_INFO_ID");
+      uRSSI(dL);
+      dL.forEach(d => {
         if (d.DevMeshType === '3' && d.Active === '1' && d.MACAddress) {
           let m = nM(d.MACAddress),
             bN = d.DevName || d.HostName || d.DisplayedPictureName || d.AliasName || "Mesh设备",
@@ -1112,14 +1266,18 @@ async function fPP() {
         wST = performance.now();
       }
 
-      let lT = "", lF = "";
+      let lT = "", lF = "", lST = null;
       if (CONFIG.forceMeshMode === 2) {
         const liR = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${ts}`);
         if (liR.ok) {
+          let liT = await liR.text();
+          lST = performance.now();
           let iI_arr = [],
             nHD = Object.create(null),
-            dC = 0;
-          parseXml(await liR.text(), "OBJ_LAN_INFO_ID").forEach(d => {
+            dC = 0,
+            dL = parseXml(liT, "OBJ_LAN_INFO_ID");
+          uRSSI(dL);
+          dL.forEach(d => {
             if (d.MACAddress && d.MACAddress !== "00:00:00:00:00:00") {
               dC++;
               let m = nM(d.MACAddress),
@@ -1151,6 +1309,7 @@ async function fPP() {
         let cApi = W_APIS[S.fI >= 0 ? S.fI : 0]; // 联动锁：WAN定江山，LAN随其后
         const lR = await fetch(`${cApi.lU}&_=${ts}`);
         lT = await lR.text();
+        lST = performance.now();
         if (lT.includes('<OBJ_CLIENTS_ID>')) {
           let mM = lT.match(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g) || [];
           lF = mM.map(m => m.replace(/[<>]/g, '')).sort().join('|');
@@ -1203,7 +1362,7 @@ async function fPP() {
           if (iI_arr.length) lT = lT.replace('</OBJ_CLIENTS_ID>', `${iI_arr.join('')}</OBJ_CLIENTS_ID>`);
         }
       }
-      if (lT.includes('<OBJ_CLIENTS_ID>')) lCxt = lT;
+      if (lT.includes('<OBJ_CLIENTS_ID>')) { lCxt = lT; lCxtT = lST; }
       if (fW) await rSD(wT, wST);
     }
     catch (e) {
