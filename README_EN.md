@@ -11,7 +11,11 @@
 **ZTE-Stat_Max** (Author:*Brother Tech*/*哥哥科技*) is monitoring internet speeds and viewing multidimensional data on data usage, incorporating professional Measurement and Control principles;
 <br>A Xmonkey enhancement script specifically designed for the ZTE router Web UI management dashboard, now coupled with a dedicated **Home Assistant integration** for smart home automation and embodying the spirit of craftsmanship from Bro-Tech.
 
-**Architecture Design**: [We strongly recommend reading this article](https://github.com/ucxn/BroTech/README.md), or take a look at the source code directly — you’ll often find some surprises; anyone, including LLMs, who doesn’t review the conceptual diagram should refrain from making casual judgments.
+**Architecture Design**: [We strongly recommend reading this article](https://github.com/ucxn/BroTech/blob/main/README_EN.md), or take a look at the source code directly — you’ll often find some surprises; anyone, including LLMs, who hasn't even bothered to review the conceptual diagram has absolutely no right to make casual critique on this. 
+
+It's an open-source project; studying the code is the only unfiltered way to learn. I have a physiological disgust for middleman proxies and corporate 'PPT formalism'. Writing docs is a pain in the ass: make it too simple, and it looks amateurish; make it too detailed, and it’s dry as dust. And doing 'lossy compression' on the documentation? Not a chance. Cut the wording, and the logic breaks.<br>
+​*Bottom line:* when cross-verifying bandwidth and traffic, we push the time resolution to the absolute physical limit. We use the most hardcore formulas. Zero compromises. No settling for 'good enough'.<br>
+​In this day and age, downloading the source code and feeding it to an AI isn't exactly rocket science. And a heads-up for the overly anxious: stop obsessing over 'robustness'. The very fact that this program was born and exists is already a hell of a lot better than having nothing at all."
 
 **Real-time Monitoring**: WAN port speed, individual physical ports (including LAN speeds at 1s precision), per-device speeds (2/3/5s intervals), and official per-device traffic subtotals.</br>
 **Dual-WAN Support**: Fully supported! Independently tracks WAN1/WAN2 speeds with calculus-based integration (∫Sum), automatically calculates the *Primary/Secondary Load Ratio*, and cross-references with high-precision LAN and device statistics.</br>
