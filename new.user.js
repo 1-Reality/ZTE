@@ -404,7 +404,8 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
             uB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offUp - (spD.up || 0) : cC.offUp),
             dB: CONFIG.readSaveData === 1 ? 0 : (spD ? cC.offDn - (spD.down || 0) : cC.offDn),
             lU: cC.offUp, lD: cC.offDn, aR: 0, dpU: 0, dpD: 0,
-            oU: cC.offUp, oD: cC.offDn, hU: new Float64Array(32), hD: new Float64Array(32), hIdx: 0, ifc: cC.iface // 真实流量
+            oU: cC.offUp, oD: cC.offDn, hU: new Float64Array(32), hD: new Float64Array(32), hIdx: 0,
+            ifc: cC.iface, name: cC.name || spD?.name || m // 真实流量
           };
         } else {
           let dU = cC.offUp - cS.lU, dD = cC.offDn - cS.lD;
@@ -440,6 +441,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
             if (CONFIG.盲漫游 === 1) cS.aR = 2;
           }
           cS.ifc = cC.iface;
+          if (cC.name) cS.name = cC.name;
         }
 
         if (cC.upRate > 6e8) { cSU -= cC.upRate; cC.upRate = 3; }
@@ -719,7 +721,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
                 integral_up: s.intUp || 0,
                 integral_down: s.intDn || 0,
                 status: (s.aR === 1 || s.aR === 2) ? "off" : (CONFIG.portMap[cC?.iface] || cC?.iface || "未知接口"),
-                name: cC?.name || k, ip: cC?.ip || "",
+                name: cC?.name || s.name || k, ip: cC?.ip || "",
                 raw_up: cC?.offUp || 0, raw_down: cC?.offDn || 0
             };
             return acc;
