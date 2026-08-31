@@ -38,14 +38,14 @@
     injectMode: 1, // 【UI注入模式】 0: 原生侧边栏(1min)| 1: 优先，10秒悬浮舱(D)| 2: 联动模式| 3：强制模式
     calcMode: 1, // 1: 上行/下行倍数模式, 0: 上行占总和比例模式
     lanPortMode: 1, // 【物理网口】 0: 关闭 | 1: 底部追加显示 | 2: WAN高速接管主线
-    portInterval: 1, // 物理网口刷新频率(秒)
+    portInterval: 3, // 物理网口刷新频率(秒)
     ratioExtremeUp: 10, // 极端上传判定阈值 (> 1000%)
     ratioWarnUp: 0.07, // 重度上传警告阈值 (> 7%)
     ratioExtremeDown: 0.01, // 极端下载判定阈值 (< 1%)
     ratioThreshold: 7, // (仅calcMode=0时有效) 上传占比报警阈值(%)
-    lanRefreshInterval: 3, // 【新增】LAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
+    lanRefreshInterval: 6, // 【新增】LAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
     wanRefreshInterval: 3, // WAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
-    信号强度刷新周期: 8, // 信号强度刷新周期，单位：帧
+    信号强度刷新周期: 16, // 信号强度刷新周期，单位：帧
     宽带最大外网上行速率: 3e8,
     宽带最大外网下行速率: 24e8, // 配置外网最大上传|下载比特(bit/bps)速率，请略微大于真实值；500兆为5e8，一千兆1e9
     盲漫游: undefined, //也就是无线交换机（AP/有线桥接）模式，无线设备被主路由识别为有线设备则设置1
@@ -167,7 +167,7 @@ const WAN_COMPAT = [
   let gWUp = (wI, k) => s2b(wI[k]);
   let gWDn = (wI, k) => s2b(wI[k]);
   let isF = !1,
-    lCxt = null, lCxtT = null;
+    lCxt = null, lCxtT = null, lCxtProcessedT = null;
   const oOp = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function () {
     this.
@@ -301,7 +301,8 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         wT = await gWT(); n = performance.now();
       }
       window.__gLWT = wT; window.__gLWT_t = n; // 保障解耦模式全局缓存不丢失
-      let lanNow = lCxtT ?? n;
+      let lanNow = lCxtT ?? n,
+        新LAN帧 = lCxtT === null || lCxtT !== lCxtProcessedT;
       
       let cWU, cWD, u2 = 0, d2 = 0, cI = Object.create(null);
       if (!wanCompat) {
@@ -391,7 +392,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         S.wLT = n;
       }
       if (CONFIG.readSaveData === 2 && !S.snapLoaded) { try { let sp = typeof GM_getValue !== 'undefined' ? GM_getValue('ha_snapshot') : null; S.snap = sp && sp.timestamp > (typeof GM_getValue !== 'undefined' ? (GM_getValue('gege_reset_ms', 0) || 0) : 0) ? sp : {}; if(S.snap.global) { S.wTotUp = S.wTotUp === 0 ? S.snap.global.wan_up || 0 : S.wTotUp; S.wTotDn = S.wTotDn === 0 ? S.snap.global.wan_down || 0 : S.wTotDn; } } catch(e){console.warn(e)} S.snapLoaded = !0; }
-      let 本轮刷新接口 = lCxtT === null ? null : new Set(),
+      let 本轮刷新接口 = lCxtT !== null && 新LAN帧 ? new Set() : null,
         有Mesh = 本轮刷新接口 !== null && (CONFIG.forceMeshMode === 2 || window.gegeLastMeshDevCount > 0);
       for (let m in cI) {
         let cC = cI[m], cS = S.cls[m];
@@ -433,7 +434,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
               cS.dpU = 0; cS.dpD = 0;
             }
           }
-          else if (cS.aR > 0) cS.aR--;
+          else if (新LAN帧 && cS.aR > 0) cS.aR--;
           if (cS.aR !== 3 && cS.ifc !== cC.iface) {
             if (CONFIG.盲漫游 !== 0) cS.aR = 1;
             if (CONFIG.盲漫游 === 1) cS.aR = 2;
@@ -465,6 +466,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
           cS.lUT = lanNow;
         }
       }
+      if (lCxtT !== null && 新LAN帧) lCxtProcessedT = lCxtT;
       S.lt = n;
       S.wInstUp = cWU;
       S.wInstDn = cWD;
@@ -1195,8 +1197,10 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
     }, !0);
   }
   window.gegePortTimer = null;
+  let fPPRunning = !1;
 async function fPP() {
-    if (document.getElementById('gege-global-overlay')?.style.display !== 'block') return;
+    if (fPPRunning) return;
+    fPPRunning = !0;
     try {
       let r = await fetch(`/?_type=vueData&_tag=vue_internet_ethport_data&_=${Date.now()}`);
       if (!r.ok) return;
@@ -1233,6 +1237,7 @@ async function fPP() {
           }
         }
       });
+      if (document.getElementById('gege-global-overlay')?.style.display !== 'block') return;
       let rw = document.getElementById('gb-phys-row'), db = document.getElementById('gb-phys-data');
       if (rw && db) {
         rw.style.display = 'flex';
@@ -1245,6 +1250,7 @@ async function fPP() {
         if(pv) { pv.style.display = 'flex'; document.getElementById('gb-pwan-tot-up').textContent = '🔼 ' + fV(Phys.tU); document.getElementById('gb-pwan-tot-down').textContent = '🔽 ' + fV(Phys.tD); }
       }
     } catch (e) {console.warn(e)}
+    finally { fPPRunning = !1; }
   }
   window.gegeBActivated = !1;
   window.gegeEngineRunning = !1;
