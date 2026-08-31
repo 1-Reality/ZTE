@@ -393,7 +393,7 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
       }
       if (CONFIG.readSaveData === 2 && !S.snapLoaded) { try { let sp = typeof GM_getValue !== 'undefined' ? GM_getValue('ha_snapshot') : null; S.snap = sp && sp.timestamp > (typeof GM_getValue !== 'undefined' ? (GM_getValue('gege_reset_ms', 0) || 0) : 0) ? sp : {}; if(S.snap.global) { S.wTotUp = S.wTotUp === 0 ? S.snap.global.wan_up || 0 : S.wTotUp; S.wTotDn = S.wTotDn === 0 ? S.snap.global.wan_down || 0 : S.wTotDn; } } catch(e){console.warn(e)} S.snapLoaded = !0; }
       let 本轮刷新接口 = lCxtT !== null && 新LAN帧 ? new Set() : null,
-        有Mesh = 本轮刷新接口 !== null && (CONFIG.forceMeshMode === 2 || window.gegeLastMeshDevCount > 0);
+        有Mesh = 本轮刷新接口 !== null && (CONFIG.forceMeshMode === 2 || window.gegeLastMeshDevCount > 0 || Object.keys(window.gegeHiddenDevices).length > 0);
       for (let m in cI) {
         let cC = cI[m], cS = S.cls[m];
         if (!cS) {
@@ -599,7 +599,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         }
       }
       async function fRSSI() {
-        try { let r = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${Date.now()}`); if (r.ok) uRSSI(parseXml(await r.text(), "OBJ_LAN_INFO_ID")); }
+        try { await getBigLan(); }
         catch (e) { console.warn("[哥哥科技] RSSI 拉取失败:", e.message); }
       }
       async function fPHY() {
@@ -1016,7 +1016,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       requestAnimationFrame(() => {
         ol.innerHTML = `<div style="padding: 20px; max-width: 1580px; margin: 0 auto; min-height: 100%;"><div id="gege-board-anchor"></div><div id="config-list" class="config-list gege-list-container"><div class="gege-section"><div class="config-title">有线设备${(window.gegeHiddenDevices && Object.keys(window.gegeHiddenDevices).length > 0) ? '<span style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：智能Mesh适配)</span>' : ''}</div>${hW.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.8GHz':'5.2GHz'}）</div>${h52.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.2GHz':'5.8GHz'}）</div>${h58.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2.join('')||'<div class="gege-empty-state">没有连接设备</div>'}
         </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU Affero GPL v3.0 协议开源，按“原样 (AS IS)”提供，不对其适用性、稳定性、精密度或任何商业场景合规性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
-        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> <span title="构建时间：2026-8.18 20:18&#10;架构设计：哥哥科技 BroTech&#10;Bilibili UID：501430041&#10;QQ群：680464365" style="cursor:help; border-bottom:1px dotted #ccc; font-family:Consolas;">${版本号}</span> | Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
+        </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> <span title="构建时间：2026-8.31 20:00&#10;架构设计：哥哥科技 BroTech&#10;Bilibili UID：501430041&#10;QQ群：680464365" style="cursor:help; border-bottom:1px dotted #ccc; font-family:Consolas;">${版本号}</span> | Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
       S._domRebuilt = true;});}
     catch (e) {
       requestAnimationFrame(() => {
@@ -1261,35 +1261,43 @@ async function fPP() {
   window.gegeSyncAnchor = 0;
   window.gegeTickCount = 0;
   window.gegeMasterTimer = null;
-  window.triggerGegeMeshSniper = async function () {
-    try {
+  let bigReq = null;
+  async function getBigLan() {
+    if (!bigReq) bigReq = (async () => {
       const liR = await fetch(`/?_type=vueData&_tag=localnet_lan_info_lua&_=${Date.now()}`);
-      let nHD = {}, dL = parseXml(await liR.text(), "OBJ_LAN_INFO_ID");
+      if (!liR.ok) throw new Error(`HTTP ${liR.status}`);
+      let liT = await liR.text();
+      if (!liT.includes('<OBJ_LAN_INFO_ID>')) throw new Error("OBJ_LAN_INFO_ID 缺失");
+      let dL = parseXml(liT, "OBJ_LAN_INFO_ID");
       uRSSI(dL);
-      dL.forEach(d => {
-        if (d.DevMeshType === '3' && d.Active === '1' && d.MACAddress) {
-          let m = nM(d.MACAddress),
-            bN = d.DevName || d.HostName || d.DisplayedPictureName || d.AliasName || "Mesh设备",
-            bI = d.Interface || "";
-          if (d.IFAliasName === 'SSID1') bI = 'wl0';
-          else if (d.IFAliasName === 'SSID5') bI = 'wl4';
-          nHD[m] = {
-            name: bN,
-            iface: bI,
-            origMac: d.MACAddress
-          };
+      if (typeof window.gegeLastLanFingerprint === 'string') {
+        let mS = new Set(window.gegeLastLanFingerprint ? window.gegeLastLanFingerprint.split('|') : []),
+          nHD = Object.create(null);
+        dL.forEach(d => {
+          if (d.Active === '1' && d.MACAddress && d.MACAddress !== "00:00:00:00:00:00") {
+            let m = nM(d.MACAddress);
+            if (!mS.has(m)) {
+              let bN = d.DevName || d.HostName || d.DisplayedPictureName || d.AliasName || "Mesh设备",
+                bI = d.Interface || "";
+              if (d.IFAliasName === 'SSID1') bI = 'wl0';
+              else if (d.IFAliasName === 'SSID5') bI = 'wl4';
+              nHD[m] = { name: bN, iface: bI, origMac: d.MACAddress, mesh: d.DevMeshType === '3' };
+            }
+          }
+        });
+        if (Object.keys(nHD).sort().join('|') !== Object.keys(window.gegeHiddenDevices).sort().join('|')) {
+          window.gegeForceUIRedraw = !0;
+          if (Object.keys(nHD).length > 0) console.log("🎯 [哥哥科技] 破甲弹命中！强制狙击名单:", Object.keys(nHD));
         }
-      });
-      if (Object.keys(nHD).length > 0) {
         window.gegeHiddenDevices = nHD;
-        window.gegeForceUIRedraw = !0;
-        console.log("🎯 [哥哥科技] 破甲弹命中！强制狙击名单:", Object.keys(nHD));
       }
-    }
-    catch (e) {
-      console.warn("[哥哥科技] B2强启拉取失败:", e.message);
-    }
-  };
+      return dL;
+    })().catch(e => {
+      console.warn("[哥哥科技] 大包拉取失败:", e.message);
+      return null;
+    }).finally(() => { bigReq = null; });
+    return bigReq;
+  }
   window.startGegePrecisionEngine = function () {
     if (window.gegeTimerStarted || window.gegeBActivated) return;
     window.gegeTimerStarted = !0;
@@ -1321,6 +1329,8 @@ async function fPP() {
       if (fW) {
         wT = await gWT();
         wST = performance.now();
+      } else wT = window.__gLWT || "";
+      if (wT) {
         if (!wanCompat) {
           let wI = parseXml(wT, 'OBJ_HOME_BASICINFO_ID')[0] || {};
           cDC = +(wI.AccessDevNum || -1) || -1;
@@ -1364,8 +1374,7 @@ async function fPP() {
           });
           window.gegeHiddenDevices = nHD;
           lT = `<ajax_response_xml_root><OBJ_CLIENTS_ID>${iI_arr.join('')}</OBJ_CLIENTS_ID></ajax_response_xml_root>`;
-          let mM = lT.match(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g) || [];
-          lF = mM.map(mx => mx.replace(/[<>]/g, '')).sort().join('|');
+          lF = [...lT.matchAll(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g)].map(m => nM(m[1])).sort().join('|');
           cDC = dC;
         }
       }
@@ -1373,13 +1382,12 @@ async function fPP() {
         lT = await gLT(ts);
         if (lT) {
           lST = performance.now();
-          let mM = lT.match(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g) || [];
-          lF = mM.map(m => m.replace(/[<>]/g, '')).sort().join('|');
+          lF = [...lT.matchAll(/<ParaName>MACAddress<\/ParaName><ParaValue>([^<]+)<\/ParaValue>/g)].map(m => nM(m[1])).sort().join('|');
         }
       }
       if (cDC !== window.gegeLastDevCount || lF !== window.gegeLastLanFingerprint) {
         if (CONFIG.forceMeshMode !== 2) {
-          let mDC = 0;
+          let mDC = null;
           try {
             const tR = await fetch(`/?_type=vueData&_tag=vue_topo_data&_=${ts}`);
             if (tR.ok) {
@@ -1387,20 +1395,34 @@ async function fPP() {
               mDC = tJ.agentlay1?.reduce((s, a) => s + (+(a.accdevCount) || 0), 0) || 0;
             }
           } catch(e) {console.warn(`[哥哥科技] Mesh狙击失败`, e.message);}
-          if (mDC !== window.gegeLastMeshDevCount) {
+          if (mDC !== null) {
+            if (lF !== window.gegeLastLanFingerprint && typeof window.gegeLastLanFingerprint === 'string') {
+              let oM = new Set(window.gegeLastLanFingerprint ? window.gegeLastLanFingerprint.split('|') : []);
+              (lF ? lF.split('|') : []).forEach(m => {
+                if (!oM.has(m) && window.gegeHiddenDevices[m]) {
+                  delete window.gegeHiddenDevices[m];
+                  window.gegeForceUIRedraw = !0;
+                }
+              });
+            }
+            window.gegeLastDevCount = cDC;
+            window.gegeLastLanFingerprint = lF;
             window.gegeLastMeshDevCount = mDC;
-            window.gegeForceUIRedraw = !0;
-            if (mDC > 0) {
-              await window.triggerGegeMeshSniper();
+            if (mDC === 0) {
+              for (let m in window.gegeHiddenDevices) {
+                if (window.gegeHiddenDevices[m]?.mesh) {
+                  delete window.gegeHiddenDevices[m];
+                  window.gegeForceUIRedraw = !0;
+                }
+              }
             }
-            else {
-              window.gegeLastMeshDevCount = 0;
-              window.gegeHiddenDevices = {};
-            }
+            else if (mDC !== Object.values(window.gegeHiddenDevices).reduce((n, d) => n + (d?.mesh ? 1 : 0), 0)) await getBigLan();
           }
         }
-        window.gegeLastDevCount = cDC;
-        window.gegeLastLanFingerprint = lF;
+        else {
+          window.gegeLastDevCount = cDC;
+          window.gegeLastLanFingerprint = lF;
+        }
       }
       if (CONFIG.forceMeshMode !== 2) {
         let hM = Object.keys(window.gegeHiddenDevices ?? {});
