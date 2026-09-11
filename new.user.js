@@ -193,11 +193,14 @@ const WAN_COMPAT = [
 
  function s2b(speedStr) {
         if (!speedStr) return 0;
-        let val = parseFloat(speedStr);
+        const val = parseFloat(speedStr);
         if (val !== val) return 0;
-        if (speedStr.includes('M') || speedStr.includes('m')) return val * 1e6;
-        if (speedStr.includes('K') || speedStr.includes('k')) return val * 1e3;
-        if (speedStr.includes('G') || speedStr.includes('g')) return val * 1e9;
+        const c = speedStr.charCodeAt(speedStr.length - 4);
+        if (c === 75) return val * 1e3;
+        if (c === 77) return val * 1e6;
+        if (c === 71) return val * 1e9;
+        if (speedStr.includes('K')) return val * 1e3; if (speedStr.includes('M')) return val * 1e6; if (speedStr.includes('G')) return val * 1e9;
+        if (speedStr.includes('k')) return val * 1e3; if (speedStr.includes('m')) return val * 1e6; if (speedStr.includes('g')) return val * 1e9;
         return val;
  }
 
@@ -582,7 +585,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
           let cache = it._gege || (it._gege = {}), logo = cache.logo ??= it.querySelector('.dev-logo');
           if (logo) { logo.style.background = 'none'; logo.innerHTML = gWSvg(rRs); }
           let dI = cache.devIntro ??= it.querySelector('.dev-intro'), rN = dI && (cache.rssiNode ??= dI.querySelector('.gege-rssi'));
-          if (rN) { let p = Math.round((cS.rssi - (cS.ifc === 'wl0' || cS.ifc === 'wl1' || cS.ifc === 'wlan0' || cS.ifc === 'wlan1' ? S.RSSI频率修正 || 0 : 0)) * 1.6666666666666667 + 133.33333333333333); rN.innerHTML = `<span style="color:${p < 0 ? '#ff4c00' : 'inherit'}">${p}%</span>, ${cS.rssi}`; }
+          if (rN) { let p = Math.round((cS.rssi - (cS.ifc === 'wl0' || cS.ifc === 'wl1' || cS.ifc === 'wlan0' || cS.ifc === 'wlan1' ? S.RSSI频率修正 || 0 : 0)) * 1.6666666666666667 + 133.33333333333334); rN.innerHTML = `<span style="color:${p < 0 ? '#ff4c00' : 'inherit'}">${p}%</span>, ${cS.rssi}`; }
         }
       }
       function uPHY(dL) {
@@ -1052,7 +1055,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       });
       requestAnimationFrame(() => {
         ol.innerHTML = `<div style="padding: 20px; max-width: 1580px; margin: 0 auto; min-height: 100%;"><div id="gege-board-anchor"></div><div id="config-list" class="config-list gege-list-container"><div class="gege-section"><div class="config-title">有线设备${(window.gegeHiddenDevices && Object.keys(window.gegeHiddenDevices).length > 0) ? `<span id="gege-mesh-badge" style="color: #ff4c00; font-size: 13px; font-weight: normal; margin-left: 10px; font-family: Consolas;">(哥哥科技：${ol.querySelector('#gege-mesh-badge')?.textContent === '(哥哥科技：Mesh全面适配)' || Object.values(window.gegeHiddenDevices).some(d => d?.mesh === false) ? 'Mesh全面适配' : '智能Mesh适配'})</span>` : ''}</div>${hW.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.8GHz':'5.2GHz'}）</div>${h52.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（${S.is5G_149?'5.2GHz':'5.8GHz'}）</div>${h58.join('')||'<div class="gege-empty-state">没有连接设备</div>'}</div><div class="gege-section"><div class="config-title">无线设备（2.4GHz）</div>${h2.join('')||'<div class="gege-empty-state">没有连接设备</div>'}
-        </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU Affero GPL v3.0 协议开源，按“原样 (AS IS)”提供，不对其适用性、稳定性、精密度或任何商业场景合规性作任何明示或暗示的担保。<br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
+        </div><div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; font-family: Consolas, 'Microsoft YaHei', sans-serif;"><div style="font-size: 11.5px; color: #777; font-style: italic; margin-bottom: 8px;">“在一个文明社会，干净的、不被监视与吸血的网络，是我们每个人的基本权利。”</div><div style="font-size: 10.5px; color: #999; line-height: 1.3; margin-bottom: 8px;">本交互式程序基于 GNU Affero GPL v3.0 协议开源，按“原样 (AS IS)”提供，不对其适用性、稳定性、精密度或任何商业场景合规性作任何明示或暗示的担保。<a href="https://github.com/ucxn/ZTE-Stat_Max/blob/main/法律声明：「哥哥科技 」品牌使用政策.md" target="_blank" style="color: #777; text-decoration: underline;">查看许可证</a><br>根据 AGPL-3.0 第 5(d) 及 7(b) 条规定，基于本程序的任何修改均不得移除或篡改本界面的署名与法律声明。保留此界面是使用本软件代码的合法性的前置条件。
         </div><div style="font-size: 12px; color: #555;"><a href="https://github.com/ucxn/ZTE-Stat_Max" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">ZTE-Stat_Max 增强组件</a> <span title="构建时间：2026-8.31 21:45&#10;架构设计：哥哥科技 BroTech&#10;Bilibili UID：501430041&#10;QQ群：680464365" style="cursor:help; border-bottom:1px dotted #ccc; font-family:Consolas;">${版本号}</span> | Copyright &copy; 2026 <a href="https://www.bilibili.com/video/BV1PtR7B8ECC" target="_blank" style="color: #0059fa; text-decoration: none; font-weight: bold;">哥哥科技</a> (BroTech)<span style="color: #888; font-weight: normal;"> | All Rights Reserved</span>&emsp;&nbsp;<a href="https://scriptcat.org/zh-CN/script-show-page/6194" target="_blank" style="color: #666; text-decoration: none;">点此分享</a></div></div></div></div>`;
       S._domRebuilt = true;});}
     catch (e) {
@@ -1408,8 +1411,8 @@ async function fPP() {
                 iface: bI,
                 origMac: d.MACAddress
               };
-              let uR = `${d.UploadSpeed||0}Kb`,
-                  dR = `${d.DownloadSpeed||0}Kb`,
+              let uR = `${d.UploadSpeed||0}Kbps`,
+                  dR = `${d.DownloadSpeed||0}Kbps`,
                   uT = (+d.BytesSend || 0) * 0.001,
                   dT = (+d.BytesReceived || 0) * 0.001,
                   oS = +(d.OnlineTime || d.OnlineTimes || 0);
@@ -1481,7 +1484,7 @@ async function fPP() {
               if (!sR.ok) continue;
               let sD = parseXml(await sR.text(), "OBJ_LANINFO_BYMAC")[0];
               if (sD) {
-                iI_arr.push(`<Instance><ParaName>MACAddress</ParaName><ParaValue>${escapeHTML(m)}</ParaValue><ParaName>IPAddress</ParaName><ParaValue>${sD.IPAddress||""}</ParaValue><ParaName>AliasName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>HostName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>Interface</ParaName><ParaValue>${escapeHTML(mt.iface)}</ParaValue><ParaName>UpRate</ParaName><ParaValue>${sD.UploadSpeed||0}K</ParaValue><ParaName>DownRate</ParaName><ParaValue>${sD.DownloadSpeed||0}K</ParaValue><ParaName>UpThroughput</ParaName><ParaValue>${(+sD.BytesSend || 0) * 0.001}</ParaValue><ParaName>DownThroughput</ParaName><ParaValue>${(+sD.BytesReceived || 0) * 0.001}</ParaValue><ParaName>OnlineDuration</ParaName><ParaValue>${+(sD.OnlineTimes || 0)}</ParaValue></Instance>`);
+                iI_arr.push(`<Instance><ParaName>MACAddress</ParaName><ParaValue>${escapeHTML(m)}</ParaValue><ParaName>IPAddress</ParaName><ParaValue>${sD.IPAddress||""}</ParaValue><ParaName>AliasName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>HostName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>Interface</ParaName><ParaValue>${escapeHTML(mt.iface)}</ParaValue><ParaName>UpRate</ParaName><ParaValue>${sD.UploadSpeed||0}Kbps</ParaValue><ParaName>DownRate</ParaName><ParaValue>${sD.DownloadSpeed||0}Kbps</ParaValue><ParaName>UpThroughput</ParaName><ParaValue>${(+sD.BytesSend || 0) * 0.001}</ParaValue><ParaName>DownThroughput</ParaName><ParaValue>${(+sD.BytesReceived || 0) * 0.001}</ParaValue><ParaName>OnlineDuration</ParaName><ParaValue>${+(sD.OnlineTimes || 0)}</ParaValue></Instance>`);
               }
             }
             catch (e) {
