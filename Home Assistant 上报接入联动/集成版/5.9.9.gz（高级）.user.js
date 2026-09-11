@@ -145,7 +145,7 @@ const W_APIS = [
   function fB(bps) {
         if (bps > 1e9) return `${Math.round(bps * 1e-6)} Mbit/s`;
         if (bps > 1e6) return `${(bps * 1e-6).toFixed(1)} Mbps`;
-        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} Kbps`;
+        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} kbps`;
         return `${Math.round(bps)} bps`;
     }
 const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]', '[1]'];
@@ -157,9 +157,9 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         if (bps === 3) return '异常网速！';
         return bps < 8700
             ? ((bps * 0.001 | 0) === bps * 0.001
-                 ? `${F_ARR[bps * 0.001]} KB/s`
-                : `${(bps * 0.000125).toFixed(2)} KB/s`)
-            : `${(bps * 0.0001220703125).toFixed(1)} K/s`;
+                 ? `${F_ARR[bps * 0.001]} kB/s`
+                : `${(bps * 0.000125).toFixed(2)} kB/s`)
+            : `${(bps * 0.0001220703125).toFixed(1)} KiB/s`;
     }
 
   function fV(bits) {

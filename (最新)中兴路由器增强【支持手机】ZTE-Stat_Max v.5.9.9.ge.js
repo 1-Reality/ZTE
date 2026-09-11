@@ -204,7 +204,7 @@ const WAN_COMPAT = [
   function fB(bps) {
         if (bps > 1e9) return `${Math.round(bps * 1e-6)} Mbit/s`;
         if (bps > 1e6) return `${(bps * 1e-6).toFixed(1)} Mbps`;
-        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} Kbps`;
+        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} kbps`;
         return `${Math.round(bps)} bps`;
     }
 const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]', '[1]'];
@@ -216,9 +216,9 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         if (bps === 3) return '异常网速！';
         return bps < 8700
             ? ((bps * 0.001 | 0) === bps * 0.001
-                 ? `${F_ARR[bps * 0.001]} KB/s`
-                : `${(bps * 0.000125).toFixed(2)} KB/s`)
-            : `${(bps * 0.0001220703125).toFixed(1)} KiB/s`;
+                 ? `${F_ARR[bps * 0.001]} kB/s`
+                : `${(bps * 0.000125).toFixed(2)} kB/s`)
+            : `${(bps * 0.0001220703125).toFixed(1)} K/s`;
     }
 
   function fV(bits) {
@@ -1408,8 +1408,8 @@ async function fPP() {
                 iface: bI,
                 origMac: d.MACAddress
               };
-              let uR = `${d.UploadSpeed||0}Kbps`,
-                  dR = `${d.DownloadSpeed||0}Kbps`,
+              let uR = `${d.UploadSpeed||0}K`,
+                  dR = `${d.DownloadSpeed||0}K`,
                   uT = (+d.BytesSend || 0) * 0.001,
                   dT = (+d.BytesReceived || 0) * 0.001,
                   oS = +(d.OnlineTime || d.OnlineTimes || 0);
@@ -1481,7 +1481,7 @@ async function fPP() {
               if (!sR.ok) continue;
               let sD = parseXml(await sR.text(), "OBJ_LANINFO_BYMAC")[0];
               if (sD) {
-                iI_arr.push(`<Instance><ParaName>MACAddress</ParaName><ParaValue>${escapeHTML(m)}</ParaValue><ParaName>IPAddress</ParaName><ParaValue>${sD.IPAddress||""}</ParaValue><ParaName>AliasName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>HostName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>Interface</ParaName><ParaValue>${escapeHTML(mt.iface)}</ParaValue><ParaName>UpRate</ParaName><ParaValue>${sD.UploadSpeed||0}Kbps</ParaValue><ParaName>DownRate</ParaName><ParaValue>${sD.DownloadSpeed||0}Kbps</ParaValue><ParaName>UpThroughput</ParaName><ParaValue>${(+sD.BytesSend || 0) * 0.001}</ParaValue><ParaName>DownThroughput</ParaName><ParaValue>${(+sD.BytesReceived || 0) * 0.001}</ParaValue><ParaName>OnlineDuration</ParaName><ParaValue>${+(sD.OnlineTimes || 0)}</ParaValue></Instance>`);
+                iI_arr.push(`<Instance><ParaName>MACAddress</ParaName><ParaValue>${escapeHTML(m)}</ParaValue><ParaName>IPAddress</ParaName><ParaValue>${sD.IPAddress||""}</ParaValue><ParaName>AliasName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>HostName</ParaName><ParaValue>${escapeHTML(mt.name)}</ParaValue><ParaName>Interface</ParaName><ParaValue>${escapeHTML(mt.iface)}</ParaValue><ParaName>UpRate</ParaName><ParaValue>${sD.UploadSpeed||0}K</ParaValue><ParaName>DownRate</ParaName><ParaValue>${sD.DownloadSpeed||0}K</ParaValue><ParaName>UpThroughput</ParaName><ParaValue>${(+sD.BytesSend || 0) * 0.001}</ParaValue><ParaName>DownThroughput</ParaName><ParaValue>${(+sD.BytesReceived || 0) * 0.001}</ParaValue><ParaName>OnlineDuration</ParaName><ParaValue>${+(sD.OnlineTimes || 0)}</ParaValue></Instance>`);
               }
             }
             catch (e) {

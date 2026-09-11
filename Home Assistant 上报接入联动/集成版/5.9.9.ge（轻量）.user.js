@@ -115,7 +115,7 @@
   function fB(bps) {
 		if (bps > 1e9) return `${(bps * 1e-6).toFixed(1)} Mbit/s`;
         if (bps > 1e6) return `${(bps * 1e-6).toFixed(2)} Mbps`;
-        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} Kbps`;
+        if (bps > 1e3) return `${(bps * 1e-3).toFixed(1)} kbps`;
         return `${Math.round(bps)} bps`;
     }
 
@@ -924,8 +924,8 @@ const calcStageRatio = (W, L_int, L_hp) => {
                 iface: bI,
                 origMac: d.MACAddress
               };
-              let uR = `${d.UploadSpeed||0}Kbps`,
-                  dR = `${d.DownloadSpeed||0}Kbps`,
+              let uR = `${d.UploadSpeed||0}K`,
+                  dR = `${d.DownloadSpeed||0}K`,
                   uT = (+d.BytesSend || 0) * 0.001,
                   dT = (+d.BytesReceived || 0) * 0.001,
                   oS = parseInt(d.OnlineTime || d.OnlineTimes || 0);
@@ -988,8 +988,8 @@ const calcStageRatio = (W, L_int, L_hp) => {
               const sI = pr.parseFromString(await sR.text(), "text/xml").querySelector("OBJ_LANINFO_BYMAC Instance");
               if (sI) {
                 let sD = pI(sI),
-                  uR = `${sD.UploadSpeed||0}Kbps`,
-                  dR = `${sD.DownloadSpeed||0}Kbps`,
+                  uR = `${sD.UploadSpeed||0}K`,
+                  dR = `${sD.DownloadSpeed||0}K`,
                   uT = (+sD.BytesSend || 0) * 0.001,
                   dT = (+sD.BytesReceived || 0) * 0.001,
                   oS = parseInt(sD.OnlineTimes || 0);
