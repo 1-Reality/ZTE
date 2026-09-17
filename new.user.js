@@ -33,7 +33,7 @@
   // ======== [0] 用户极客环境变量配置区 ========
   const CONFIG = {
     readSaveData: 1, // 【历史记录】 1: 从路由器后台读档 | 0: 新局模式 | 2: 从本地长期历史读档 [自动保存！]
-    forceMeshMode: 1, // 【Mesh探测模式】0: 官方拓扑驱动 | 1: n秒智能等待(默认) | 2: 强制大包抓取(专治阉割、不出数据)
+    forceMeshMode: 1, // 【Mesh探测模式】0: 官方拓扑驱动 | 1: n秒智能等待(默认) | 2: 强制大包抓取(专治阉割、不出数据)[会改变LAN时率]
     uiLayout: 1, // 【面板拓扑结构】 0: 经典版 | 1: 详细紧凑版(驾驶舱美学) | 2: 详细平铺版(报表流美学)
     injectMode: 1, // 【UI注入模式】 0: 原生侧边栏(1min)| 1: 优先，10秒悬浮舱(D)| 2: 联动模式| 3：强制模式
     calcMode: 1, // 1: 上行/下行倍数模式, 0: 上行占总和比例模式
@@ -43,17 +43,17 @@
     ratioWarnUp: 0.07, // 重度上传警告阈值 (> 7%)
     ratioExtremeDown: 0.01, // 极端下载判定阈值 (< 1%)
     ratioThreshold: 7, // (仅calcMode=0时有效) 上传占比报警阈值(%)
-    lanRefreshInterval: 6, // 【新增】LAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
-    wanRefreshInterval: 3, // WAN口刷新时间(秒)，用于精准补偿0到唤醒时的瞬时流量
-    信号强度刷新周期: 16, // 信号强度刷新周期，单位：帧
-    宽带最大外网上行速率: 3e8,
-    宽带最大外网下行速率: 24e8, // 配置外网最大上传|下载比特(bit/bps)速率，请略微大于真实值；500兆为5e8，一千兆1e9
-    盲漫游: undefined, //也就是无线交换机（AP/有线桥接）模式，无线设备被主路由识别为有线设备则设置1
-    周期类型: 'W', // 'M'(每月), 'W'(每周), 'D'(固定天数), 其它任意字符：不开启周期重置+自动导出功能
+    lanRefreshInterval: 6, // LAN口刷新时间(秒)，用于补偿评估0到唤醒期间的流量
+    wanRefreshInterval: 3, // 【外网】WAN口刷新时间(秒)，通常为程序主时钟周期
+    信号强度刷新周期: 16, // 信号强度刷新周期，单位：帧（程序主采样周期）；请设成 2 的自然数次幂（其中1为不主动请求刷新）
+    宽带最大外网下行速率: 24e8, // 配置外网最大上传|下载比特(bit/bps)速率
+    宽带最大外网上行速率: 3e8, //请略微大于真实值；500兆为5e8，一千兆1e9
+    盲漫游: undefined, //也就是包括但不限于无线交换机（AP/有线桥接）模式，无线设备被主路由识别为有线设备则设置1
+    周期类型: 'W', // 'M'(每月), 'W'(每周), 'D'(固定天数)； 其它任意字符：不开启周期重置+自动导出功能
     周_天设置: 6, // M: 1~31号; W: 0~6(周日~周六); D: 间隔天数(如 7)
     基准日期: '2026-06-20', // 原点时间(仅 D 模式有效) 任意一个历史周期的零点
-    报告时间: -720, // 提示时间：相对周期0点的偏移分钟数。(如 -4320 代表提前 3 天) 设置相对指定日期的下个周期起点的时间偏移量
-    自动导出: -180, // 强制导出：相对周期0点的偏移分钟数。(如 W模式+锚点6(周六)+偏移-180 = 周五 21:00 强制导出清零)
+    报告时间: -720, // 提示时间：相对周期0点的偏移分钟数（如 -4320 代表提前 3 天）设置相对指定日期的下个周期起点的时间偏移量
+    自动导出: -180, // 强制导出：相对周期0点的偏移分钟数（如 W模式+锚点6(周六)+偏移-180 = 周五 21:00 强制导出清零）
     时区补偿: 28800000, // 默认 UTC+8 时区补偿量。
     portMap: {
       "eth1": "网口 1",
@@ -288,9 +288,9 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
     .zte-bar-wrap{position:relative;width:100%;border-radius:4px;border:1px solid;font-size:13px;font-weight:bold;overflow:hidden;padding:3px 8px;display:flex;justify-content:space-between;align-items:center;z-index:1;box-sizing:border-box;}.zte-bar-wrap span{font-size:inherit;font-weight:inherit;}.zte-bar-up{color:#ff4c00;border-color:rgba(255,76,0,0.3);}.zte-bar-down{color:#0059fa;border-color:rgba(0,89,250,0.3);}.zte-bar-up::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(255,76,0,0.12);width:var(--p-up,0%);transition:width 0.5s;}.zte-bar-down::before{content:'';position:absolute;left:0;top:0;bottom:0;z-index:-1;background:rgba(0,89,250,0.12);width:var(--p-down,0%);transition:width 0.5s;}#config-list.gege-list-container{contain:content!important;background-color:#ffffff!important;border-radius:8px!important;border:1px solid #e0e0e0!important;padding:20px 30px!important;box-shadow:0 2px 10px rgba(0,0,0,0.02)!important;margin-top:10px!important;}.gege-section{margin-bottom:10px;}
     .gege-section:last-child{margin-bottom:0;}.gege-list-container .config-title{font-size:16px!important;font-weight:bold!important;color:#333!important;margin:15px 0 10px 0!important;padding-bottom:5px!important;}.gege-list-container .gege-section:first-child .config-title{margin-top:0!important;}.gege-empty-state{color:#999!important;font-size:14px!important;padding:0 0 15px 5px!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:5px!important;}.gege-list-item{background-color:transparent!important;border-bottom:1px solid #f0f0f0!important;padding:15px 10px!important;margin-bottom:0!important;border-radius:0!important;}
     .gege-list-item:last-child{border-bottom:none!important;}#zte-geek-board{contain:content;background-color:transparent!important;border-left:4px solid #0059fa!important;border-radius:0!important;padding:5px 0 5px 15px!important;margin:10px 0 15px 0!important;box-shadow:none!important;border-bottom:1px solid #f0f0f0!important;font-size:14px;display:flex;flex-direction:column;gap:6px;padding-bottom:15px!important;}#gege-global-overlay #zte-geek-board.geek-frozen-pane{position:sticky!important;top:0px!important;z-index:100!important;background-color:#f3f4f5!important;margin-top:0!important;padding-top:15px!important;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05)!important;border-radius:0 0 8px 8px!important;}.gege-pin{cursor:pointer;font-size:11px;filter:grayscale(100%);opacity:0.5;transition:transform 0.2s;margin-left:2px;}
-    .gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}#gege-global-overlay{position:fixed;top:0;right:0;bottom:0;background:#f3f4f5;z-index:9999;overflow-y:auto;padding-bottom:50px;left:0;transition:left 0.3s ease;}@media (min-width: 1025px) and (orientation: landscape){#gege-global-overlay{left:max(15%, 240px);}}@media (max-width: 768px){.geek-right-box:has(#gb-wan-zero-up),.geek-right-box:has(#gb-cur-up-vol){display:none!important}.gege-list-item{padding:12px 10px!important}.config-item-box{position:relative!important;flex-direction:column!important;padding-bottom:0!important}.config-item .info,.config-item .logo,.config-item .speed{width:100%!important;border:none!important;padding:0!important;position:static!important}.config-item .dev-intro{min-height:auto!important;justify-content:center!important;padding-right:90px!important}.config-item .logo{padding-bottom:4px!important}.config-item .info{flex-direction:column!important;margin:0 0 6px 0!important;gap:2px!important}.dev-ip{position:absolute!important;top:0!important;right:0!important;font-size:11px!important;background:rgba(0,89,250,0.08);color:#0059fa!important;padding:2px 6px!important;border-radius:4px;font-weight:bold;line-height:1.2;z-index:10;width:auto!important}.dev-number{width:auto!important;margin:0!important;font-size:11px!important}.gege-ratio-box{width:100%!important;margin-top:2px!important;margin-bottom:0!important}.gege-down-box{width:100%!important;margin-top:2px!important}#zte-geek-board{padding:8px!important;gap:0!important;font-size:11.5px!important}.geek-row{height:auto!important;flex-wrap:wrap!important;margin-bottom:4px!important;justify-content:flex-start!important;gap:2px 6px!important;line-height:1.3!important}.geek-label{width:auto!important;min-width:60px!important;font-size:11.5px!important;flex:0 0 auto!important}.geek-val-box{width:auto!important;flex:1 1 0%!important;display:flex!important;flex-wrap:wrap!important;margin-left:0!important;gap:2px 6px!important}.geek-fixed-width{width:auto!important}.geek-right-box{width:100%!important;flex:0 0 100%!important;text-align:left!important;font-size:11.5px!important;margin-top:2px!important;margin-left:0!important}.gege-list-container{padding:8px!important}.zte-enhance-speed{gap:4px!important}}#zte-geek-board{position:relative!important;overflow:visible!important;}#gege-speed-chart{position:absolute;z-index:25;box-sizing:border-box;cursor:move;user-select:none;touch-action:none;container-type:inline-size;}#gege-speed-chart canvas{display:block;width:100%;height:100%;}.gege-chart-head,.gege-chart-foot{position:absolute;left:clamp(28px,8%,36px);right:8px;display:flex;align-items:center;pointer-events:none;font:bold clamp(9px,2.1cqw,11px) system-ui,sans-serif;white-space:nowrap;overflow:hidden;}.gege-chart-head{top:2px;color:#111;gap:8px;}.gege-chart-head [data-gc="range"]{color:#666;font-weight:normal;overflow:hidden;text-overflow:ellipsis;margin-left:auto;}.gege-chart-foot{bottom:4px;justify-content:flex-start;gap:clamp(3px,1.1cqw,12px);}.gege-chart-foot span{min-width:0;overflow:hidden;text-overflow:ellipsis;}.gc-up{color:#ff4c00;flex:0 1 auto;}.gc-down{color:#0b5;flex:0 1 auto;}.gc-extra{color:#666;text-align:right;margin-left:auto;flex:1 1 0;min-width:0;}#gege-speed-chart .gege-chart-resize{position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;border-right:3px solid #0059fa;border-bottom:3px solid #0059fa;cursor:nwse-resize;border-radius:2px;}@media (max-width:768px){#gege-speed-chart{left:210px!important;width:calc(100% - 220px)!important;height:96px!important;}}`;
-  document.
-  head.
+    .gege-pin.active{filter:none;opacity:1;transform:scale(1.1);}#gege-global-overlay{position:fixed;top:0;right:0;bottom:0;background:#f3f4f5;z-index:9999;overflow-y:auto;padding-bottom:50px;left:0;transition:left 0.3s ease;}@media (min-width: 1025px) and (orientation: landscape){#gege-global-overlay{left:max(15%, 240px);}}@media (max-width: 768px){.geek-right-box:has(#gb-wan-zero-up),.geek-right-box:has(#gb-cur-up-vol){display:none!important}.gege-list-item{padding:12px 10px!important}.config-item-box{position:relative!important;flex-direction:column!important;padding-bottom:0!important}.config-item .info,.config-item .logo,.config-item .speed{width:100%!important;border:none!important;padding:0!important;position:static!important}.config-item .dev-intro{min-height:auto!important;justify-content:center!important;padding-right:90px!important}.config-item .logo{padding-bottom:4px!important}.config-item .info{flex-direction:column!important;margin:0 0 6px 0!important;gap:2px!important}.dev-ip{position:absolute!important;top:0!important;right:0!important;font-size:11px!important;background:rgba(0,89,250,0.08);color:#0059fa!important;padding:2px 6px!important;border-radius:4px;font-weight:bold;line-height:1.2;z-index:10;width:auto!important}.dev-number{width:auto!important;margin:0!important;font-size:11px!important}.gege-ratio-box{width:100%!important;margin-top:2px!important;margin-bottom:0!important}.gege-down-box{width:100%!important;margin-top:2px!important}#zte-geek-board{padding:8px!important;gap:0!important;font-size:11.5px!important}.geek-row{height:auto!important;flex-wrap:wrap!important;margin-bottom:4px!important;justify-content:flex-start!important;gap:2px 6px!important;line-height:1.3!important}.geek-label{width:auto!important;min-width:60px!important;font-size:11.5px!important;flex:0 0 auto!important}.geek-val-box{width:auto!important;flex:1 1 0%!important;display:flex!important;flex-wrap:wrap!important;margin-left:0!important;gap:2px 6px!important}.geek-fixed-width{width:auto!important}.geek-right-box{width:100%!important;flex:0 0 100%!important;text-align:left!important;font-size:11.5px!important;margin-top:2px!important;margin-left:0!important}.gege-list-container{padding:8px!important}.zte-enhance-speed{gap:4px!important}}#zte-geek-board{position:relative!important;overflow:visible!important;}#gege-speed-chart{position:absolute;z-index:25;box-sizing:border-box;cursor:move;user-select:none;touch-action:none;container-type:inline-size;}#gege-speed-chart canvas{display:block;width:100%;height:100%;}.gege-chart-head,.gege-chart-foot{position:absolute;left:clamp(28px,8%,36px);right:8px;display:flex;align-items:center;pointer-events:none;font:bold clamp(9px,2.1cqw,11px) system-ui,sans-serif;white-space:nowrap;overflow:hidden;}.gege-chart-head{top:2px;color:#111;gap:8px;}.gege-chart-head [data-gc="range"]{color:#666;font-weight:normal;overflow:hidden;text-overflow:ellipsis;margin-left:auto;}.gege-chart-foot{bottom:4px;justify-content:flex-start;gap:clamp(3px,1.1cqw,12px);}.gege-chart-foot span{min-width:0;overflow:hidden;text-overflow:ellipsis;}.gc-up{color:#ff4c00;flex:0 1 auto;}.gc-down{color:#0b5;flex:0 1 auto;}.gc-extra{color:#666;text-align:right;margin-left:auto;flex:1 1 0;min-width:0;}#gege-speed-chart .gege-chart-resize{position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;border-right:3px solid #0059fa;border-bottom:3px solid #0059fa;cursor:nwse-resize;border-radius:2px;}@media (max-width:768px){#gege-speed-chart{left:210px!important;width:calc(100% - 220px)!important;height:96px!important;}}
+    `;
+  document.head.
   appendChild(st);
   window.gegeRenderedMacs = new Set();
   async function rSD(pWT = null, sT = null) {
@@ -301,12 +301,11 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
       if (pWT !== null) {
         wT = pWT; n = sT || performance.now();
       } else {
-        wT = await gWT(); n = performance.now();
-      }
+        wT = await gWT(); n = performance.now();}
       window.__gLWT = wT; window.__gLWT_t = n; // 保障解耦模式全局缓存不丢失
       let lanNow = lCxtT ?? n,
-        新LAN帧 = lCxtT === null || lCxtT !== lCxtProcessedT;
-      
+        新LAN帧 = lCxtT === null || lCxtT !== lCxtProcessedT,
+        lanDt = lCxtT !== null && lCxtProcessedT !== null && 新LAN帧 ? (lanNow - lCxtProcessedT) * .001 : CONFIG.lanRefreshInterval;
       let cWU, cWD, u2 = 0, d2 = 0, cI = Object.create(null);
       if (!wanCompat) {
         const wI = parseXml(wT, 'OBJ_HOME_BASICINFO_ID')[0] || {};
@@ -370,10 +369,10 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
       }
       if (iD) {
         for (let m in S.cls) if (!cI[m]) {
-          let cS = S.cls[m], ms = lanNow - cS.lUT;
-          if (ms > CONFIG.lanRefreshInterval * 1000) ms = CONFIG.lanRefreshInterval * 1000;
-          cS.intUp += cS.upR * ms * 0.0005;
-          cS.intDn += cS.dnR * ms * 0.0005;
+          let cS = S.cls[m], dt = (lanNow - cS.lUT) * .001;
+          if (dt > lanDt) dt = lanDt; dt *= .5;
+          cS.intUp += cS.upR * dt;
+          cS.intDn += cS.dnR * dt;
           cS.upR = cS.dnR = 0;
         }
       }
@@ -420,12 +419,12 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
           else if (cS.aR === 3) {
             if (dU > 0 || dD > 0) {
               if (cS.dpU && dU > cS.dpU * 0.975 && cS.dpD && dD > cS.dpD * 0.975) {
-                if (dU < cS.dpU * 1.1 || dU < cS.dpU + CONFIG.宽带最大外网上行速率 * CONFIG.lanRefreshInterval) {
+                if (dU < cS.dpU * 1.1 || dU < cS.dpU + CONFIG.宽带最大外网上行速率 * lanDt) {
                   cS.uB += cS.dpU; cS.oU += cS.dpU;
                 } else {
                   cS.uB += dU; cS.oU += dU;
                 }
-                if (dD < cS.dpD * 1.1 || dD < cS.dpD + CONFIG.宽带最大外网下行速率 * CONFIG.lanRefreshInterval) {
+                if (dD < cS.dpD * 1.1 || dD < cS.dpD + CONFIG.宽带最大外网下行速率 * lanDt) {
                   cS.dB += cS.dpD; cS.oD += cS.dpD;
                 } else {
                   cS.dB += dD; cS.oD += dD;
@@ -463,9 +462,9 @@ const F_ARR = ['0', '[1/8]', '[2/8]', '[3/8]', '[4/8]', '[5/8]', '[6/8]', '[7/8]
         if (cC.upRate !== cS.upR || cC.dnRate !== cS.dnR || cS.aR === 0 && (!有Mesh || !window.gegeHiddenDevices[m]) && 本轮刷新接口?.has(cC.iface)) {
           let ms = lanNow - cS.lUT;
           if (cS.upR > 0) { cS.intUp += (cS.upR + cC.upRate) * ms * 0.0005; }
-          else if (cC.upRate > 0) { let eU = cC.upRate * CONFIG.lanRefreshInterval * 0.5; cS.intUp += eU; cS.zEU = (cS.zEU || 0) + eU; cS.zUC = (cS.zUC || 0) + 1; }
+          else if (cC.upRate > 0) { let eU = cC.upRate * lanDt * 0.5; cS.intUp += eU; cS.zEU = (cS.zEU || 0) + eU; cS.zUC = (cS.zUC || 0) + 1; }
           if (cS.dnR > 0) { cS.intDn += (cS.dnR + cC.dnRate) * ms * 0.0005; }
-          else if (cC.dnRate > 0) { let eD = cC.dnRate * CONFIG.lanRefreshInterval * 0.5; cS.intDn += eD; cS.zED = (cS.zED || 0) + eD; cS.zDC = (cS.zDC || 0) + 1; }
+          else if (cC.dnRate > 0) { let eD = cC.dnRate * lanDt * 0.5; cS.intDn += eD; cS.zED = (cS.zED || 0) + eD; cS.zDC = (cS.zDC || 0) + 1; }
           cS.upR = cC.upRate;
           cS.dnR = cC.dnRate;
           cS.lUT = lanNow;
@@ -651,7 +650,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         for (let i = 7; i--; ) { let xx = l + gw * i / 6; x.beginPath(); x.moveTo(xx,t); x.lineTo(xx,H-b); x.stroke(); }
         x.setLineDash([]);
         let li = (S.总图点数 - 1) & 8191, au = n ? (n === 8000 ? su * .000125 : su / n) : 0, ad = n ? (n === 8000 ? sd * .000125 : sd / n) : 0;
-        (box._gcMeta ??= box.querySelector('[data-gc="meta"]')).textContent = `采样:${window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3}s  点:${S.总图点数}`;
+        (box._gcMeta ??= box.querySelector('[data-gc="meta"]')).textContent = `采样:${window.gegeBActivated ? CONFIG.wanRefreshInterval : 3}s  点:${S.总图点数}`;
         let rg = box._gcRange ??= box.querySelector('[data-gc="range"]'), rs = `峰↑${fBy(S.wMaxU)} ↓${fBy(S.wMaxD)}  谷↑${S.wMinU < Infinity ? fBy(S.wMinU) : '--'} ↓${S.wMinD < Infinity ? fBy(S.wMinD) : '--'}`; rg.textContent = rs; rg.title = rs;
         (box._gcUp ??= box.querySelector('[data-gc="up"]')).textContent = `发 ${n ? fBy(S.总上行图[li]) : fBy(0)}`;
         (box._gcDown ??= box.querySelector('[data-gc="down"]')).textContent = `收 ${n ? fBy(S.总下行图[li]) : fBy(0)}`;
@@ -786,8 +785,7 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
     S.rTick = ((S.rTick || 0) + 1) & 7;
     if (S.rTick === 1 || !S.cRT) {
-        S.aWu = (S.wTotUp - (S.lwTU || S.wTotUp)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 3); S.lwTU = S.wTotUp;
-        S.aWd = (S.wTotDn - (S.lwTD || S.wTotDn)) / ((window.gegeBActivated ? (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) : 3) << 3); S.lwTD = S.wTotDn;
+      S.aWu = (S.wTotUp - (S.lwTU || S.wTotUp)) / ((window.gegeBActivated ? CONFIG.wanRefreshInterval : 3) << 3); S.lwTU = S.wTotUp; S.aWd = (S.wTotDn - (S.lwTD || S.wTotDn)) / ((window.gegeBActivated ? CONFIG.wanRefreshInterval : 3) << 3); S.lwTD = S.wTotDn;
         if (S.hasW2) {
             let rU = S.w2TotUp > 0 ? (S.wTotUp / S.w2TotUp) : (S.wTotUp > 0 ? Infinity : 0), rD = S.w2TotDn > 0 ? (S.wTotDn / S.w2TotDn) : (S.wTotDn > 0 ? Infinity : 0);
             let fR = (r) => r === Infinity ? '∞' : (r > 1 ? r.toFixed(2) + 'x' : (r * 100).toPrecision(3) + '%');
@@ -1141,7 +1139,9 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
             CONFIG.forceMeshMode = 2;
             clearInterval(window.gegeMasterTimer);
             if (window.gegeLanTimer) clearInterval(window.gegeLanTimer);
-            window.gegeMasterTimer = setInterval(eBET, 6000);
+            eBET(!1);  // 立即打一枪 LAN 大包
+            window.gegeMasterTimer = setInterval(rSD, CONFIG.wanRefreshInterval * 1000);
+            window.gegeLanTimer = setInterval(() => eBET(!1), CONFIG.lanRefreshInterval * (1 + .5 * ((CONFIG.lanRefreshInterval <= 10) + (CONFIG.lanRefreshInterval <= 7.5) + (CONFIG.lanRefreshInterval <= 6) + (CONFIG.lanRefreshInterval <= 5)) + 2 * (CONFIG.lanRefreshInterval <= 3)) * 1000); //大包时钟
             let ol = document.getElementById('gege-global-overlay');
             if (ol) {
               let aB = document.createElement('div');
@@ -1161,8 +1161,11 @@ const SPRK = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
       if (window.gegeBActivated) {
         eBET().finally(() => {
           if (首次启动 && !window.gegeMasterTimer) {
-            if (CONFIG.forceMeshMode === 2 || CONFIG.wanRefreshInterval === CONFIG.lanRefreshInterval) {
-              window.gegeMasterTimer = setInterval(eBET, (CONFIG.forceMeshMode === 2 ? 6 : CONFIG.wanRefreshInterval) * 1000);
+            if (CONFIG.forceMeshMode === 2) {
+              window.gegeMasterTimer = setInterval(rSD, CONFIG.wanRefreshInterval * 1000);
+              window.gegeLanTimer = setInterval(() => eBET(!1), CONFIG.lanRefreshInterval * (1 + .5 * (CONFIG.lanRefreshInterval <= 10) + .5 * (CONFIG.lanRefreshInterval <= 7.5) + .5 * (CONFIG.lanRefreshInterval <= 6) + .5 * (CONFIG.lanRefreshInterval <= 5) + 2 * (CONFIG.lanRefreshInterval <= 3)) * 1000); //中|大包时间字面量计算
+            } else if (CONFIG.wanRefreshInterval === CONFIG.lanRefreshInterval) {
+              window.gegeMasterTimer = setInterval(eBET, CONFIG.wanRefreshInterval * 1000);
             } else {
               window.gegeMasterTimer = setInterval(rSD, CONFIG.wanRefreshInterval * 1000);
               window.gegeLanTimer = setInterval(() => eBET(!1), CONFIG.lanRefreshInterval * 1000);
