@@ -20,7 +20,7 @@
 // @grant           GM_setValue
 // @grant           GM_getValue
 // @storageName     GBNPA_Storage
-// @license         LicenseRef-APL-0.1.Bro OR (SUL-1.0 AND PolyForm-Noncommercial-1.0.0)
+// @license         LicenseRef-APL-0.1.Bro OR SUL-1.0 AND PolyForm-Noncommercial-1.0.0
 // @website         https://github.com/ucxn/ZTE-Stat_Max
 // @supportURL      https://b23.tv/BV1PtR7B8ECC
 // @run-at          document-start

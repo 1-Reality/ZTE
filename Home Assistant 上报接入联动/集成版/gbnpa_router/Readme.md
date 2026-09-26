@@ -79,12 +79,5 @@ The project's core components:
 * This is a purely passive data-listening and reassembly tool — it doesn't touch the ZTE router's underlying firmware and introduces no security risk.
 * MAC addresses captured by the script are automatically sanitized at the HA level (colons stripped, lowercased) to match system conventions, though the original formatting is still preserved on the device cards for cross-plugin connection aggregation.
 * We'd recommend assigning static IPs to key devices on your router, so their identities show up more reliably on the HA panel.
-
-## 📄 License
-
-[Mozilla Public License - v 2.0](https://www.mozilla.org/MPL/2.0)
-
-Special note: the brother project, **[ZTE-Stat_Max](https://github.com/ucxn/ZTE-Stat_Max)**, remains independent.
-
 ---
 *Authored by 哥哥科技*

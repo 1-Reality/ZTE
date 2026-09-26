@@ -2,7 +2,7 @@ Required Notice: Copyright © 2026 哥哥科技 (BroTech)
 
 Required Notice: https://github.com/ucxn/ZTE-Stat_Max
 
-所有的法律声明和许可以仓库中的实际 'License' 文件为准。<br>
+所有的“许可证”不以名称定义，法律效力以仓库中的实际 'License' 文件为准。<br>
 您可以收取通常范围内交易双方认为合理的技术服务费，但是不得将本软件本身源码或可执行产物打包倒卖。<br>
 中兴官方可以直接集成该程序，但是必须保留署名；具体的方式可以商榷，我或将可对ZTE官方提供非常合理的许可。
 # License
@@ -27,7 +27,7 @@ You may choose either licensing option.
 无论使用何种许可证，都应当保留作者的显著署名。<br>
 Regardless of the license used, the author's prominent attribution must be retained.
 
-当引用我的项目能明确的表明领域的时候，可以不再引用GitHub用户名或者项目名（但不推荐）、仓库链接。
+当引用我的项目能明确地表明领域的时候，可以不再引用GitHub用户名或者项目名（但不推荐）、仓库链接。
 
 但是在任何情况下都不得删除、篡改、遮蔽、隐藏、替换、改写、缩写、截断、弱化、降低可见性、降低显著性、误导性呈现（Removal, Alteration, Obscuration, Concealment, Replacement, Rewording, Abbreviation, Truncation, Attenuation, Reduction of Visibility, Reduction of Prominence, Misleading Presentation）
 

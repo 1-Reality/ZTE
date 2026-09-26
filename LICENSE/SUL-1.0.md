@@ -64,8 +64,7 @@ any kind of legal claim.
 
 ### Definitions
 
-The "licensor" is the entity offering these terms.
-
+The "licensor" is the entity offering these terms.<br>
 The "software" is the software the licensor makes available under these terms, including any portion of it.
 
 "You" refers to the individual or entity agreeing to these terms.

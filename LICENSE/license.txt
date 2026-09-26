@@ -124,8 +124,7 @@ and (c) for selected patent licensing terms (if any) see Section 2.2 below and P
     3.3. SOURCE CODE DISTRIBUTIONS.
     When a Distributor makes the Licensed Work, or any portion thereof, available to any Person in Source Code form, it must be made available under this License and a copy of this 
 	License must be included with each copy of the Source Code, situated so that the copy of the License is conspicuously brought to the attention of that Person. For greater 
-	clarification, this Section 3.3 applies to all distribution of the Licensed Work in any Source Code form. A Distributor may charge a fee for the physical act of transferring 
-	a copy, which shall be free of charge.
+	clarification, this Section 3.3 applies to all distribution of the Licensed Work in any Source Code form. A Distributor may receive an acknowledgment, which shall be free of charge.
 
     3.4. REQUIRED NOTICES IN SOURCE CODE.
     Each Subsequent Contributor must ensure that the notice set out in Part 5 of Exhibit A is included in each file of the Source Code for each Subsequent Work originating from that 
@@ -171,12 +170,12 @@ and (c) for selected patent licensing terms (if any) see Section 2.2 below and P
     The name of a Distributor may not be used by any other Distributor to endorse or promote the Licensed Work or products derived from the Licensed Work, without prior written permission.
 
     3.10. RECOGNITION OF INITIAL CONTRIBUTOR.
-        As a modest attribution to the Initial Contributor, in the hope that its promotional value may help justify the time, money and effort invested in writing the Initial Work, the 
+        As a significant attribution to the Initial Contributor, in the hope that its promotional value may help justify the time, money and effort invested in writing the Initial Work, the 
 		Initial Contributor may include in Part 2 of the Supplement File a requirement that each time an executable program resulting from the Initial Work or any Subsequent Work, or 
 		a program dependent thereon, is launched or run, a prominent display of the Initial Contributor's attribution information must occur (the "ATTRIBUTION INFORMATION"). The 
 		Attribution Information must be included at the beginning of each Source Code file. For greater certainty, the Initial Contributor may specify in the Supplement File that the 
 		above attribution requirement only applies to an executable program resulting from the Initial Work or any Subsequent Work, but not a program dependent thereon. The intent is 
-		to provide for PROMINENT modest attribution.
+		to provide for PROMINENT attribution.
 
     3.11. For greater certainty, any description or attribution provisions contained within a Supplement File may only be used to specify the nature of the description or attribution requirements, 
 	as the case may be.
@@ -292,10 +291,10 @@ and (c) for selected patent licensing terms (if any) see Section 2.2 below and P
 		of any part hereof.
     10.7. Each of the terms "including", "include" and "includes", when used in this License, is not limiting whether or not non-limiting language (such as "without limitation" or 
 		"but not limited to" or words of similar import) is used with reference thereto.
-    10.8. The parties hereto acknowledge they have expressly required that this License and notices relating thereto be drafted in the Auther's language.
+    10.8. The parties hereto acknowledge they have expressly required that this License and notices relating thereto be interpreted in the Author's language.
 
 //***THE LICENSE TERMS END HERE (OTHER THAN AS SET OUT IN EXHIBIT A).***//
-EXHIBIT A (to the Adaptive Public License)
+EXHIBIT A (to the Adaptive Public License of Bro-Tech)
 
     PART 1: INITIAL CONTRIBUTOR AND DESIGNATED WEB SITE
     The Initial Contributor is: 	哥哥科技 
