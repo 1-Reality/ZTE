@@ -7,7 +7,7 @@
 // @description     一款针对中兴官方计数器和UI不区分上下行、流量数据不可靠、网页隐藏API等问题而诞生的测控“引擎”，一个庞大的循环流程程序；融合了哥哥的大量思想和算法，探索属于家庭网关的真相。
 // @description:en  Bro-Tech QQ群（Group） 680464365
 // @noframes
-// @tag             哥哥科技 路由器 中兴 网络 监控 统计 数据 可视化 极客 增强 UI HA 智能 定时 后台 Measurement M&C Bro 宽带 流量 网速 算法 JS C WebHook 网页 浏览器 微积分 公网
+// @tag             哥哥科技 路由器 中兴 网络 监控 统计 数据 可视化 极客 增强 UI HA 智能 定时 后台 Measurement M&C Bro 宽带 流量 网速 算法 JS C WebHook 网页 浏览器 微积分 公网 Bro Tech
 // @website         https://github.com/ucxn/ZTE-Stat_Max
 // @supportURL      https://b23.tv/BV1PtR7B8ECC
 // @icon            https://scriptcat.org/api/v2/resource/image/cRkcAvu6aH90bpAa
@@ -23,7 +23,7 @@
 // @grant           GM_getValue
 // @storageName     GBNPA_Storage
 // @run-at          document-start
-// @license         LicenseRef-APL-0.1.Bro OR (SUL-1.0 AND PolyForm-Noncommercial-1.0.0)
+// @license         LicenseRef-APL-Bro-0.1 OR (SUL-1.0 AND PolyForm-Noncommercial-1.0.0)
 // @updateURL       https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
 // @downloadURL     https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/new.user.js
 // ==/UserScript==
