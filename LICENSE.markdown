@@ -28,8 +28,8 @@ You may choose either licensing option.
 
 - Adaptive Public License: [`license.txt`](./LICENSE/license.txt)
 - APL Supplement File: [`suppfile.txt`](./LICENSE/suppfile.txt)
-- Sustainable Use License 1.0: [`LICENSES/SUL-1.0.md`](./LICENSE/SUL-1.0.md)
-- PolyForm Noncommercial License 1.0.0: [`LICENSES/PolyForm-Noncommercial-1.0.0.md`](./LICENSE/PolyForm-Noncommercial-1.0.0.md)
+- Sustainable Use License 1.0: [`SUL-1.0.md`](./LICENSE/SUL-1.0.md)
+- PolyForm Noncommercial License 1.0.0: [`PolyForm-Noncommercial-1.0.0.md`](./LICENSE/PolyForm-Noncommercial-1.0.0.md)
 
 无论使用何种许可证，都应当保留作者的显著署名。<br>
 Regardless of the license used, the author's prominent attribution must be retained.
