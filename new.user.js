@@ -7,7 +7,7 @@
 // @description:en  Bro-Tech QQ群（Group） 680464365
 // @author          哥哥科技 space.bilibili.com/501430041
 // @noframes
-// @tag             哥哥科技 路由器 中兴 网络 监控 统计 数据 可视化 极客 增强 UI HA 智能 定时 后台 Measurement M&C Bro 宽带 流量 网速 算法 JS C WebHook 网页 浏览器 微积分 公网
+// @tag             哥哥科技 路由器 中兴 网络 监控 统计 数据 可视化 极客 增强 UI HA 智能 定时 后台 Measurement M&C Bro 宽带 流量 网速 算法 JS C WebHook 网页 浏览器 微积分 公网 Brotech
 // @icon            https://scriptcat.org/api/v2/resource/image/PD6xhxddlUESIwAV
 // @include         /^https?:\/\/10(\.[0-9]{1,3}){3}(:\d+)?\/.*$/
 // @include         http://192.168.*.*
@@ -20,7 +20,7 @@
 // @grant           GM_setValue
 // @grant           GM_getValue
 // @storageName     GBNPA_Storage
-// @license         LicenseRef-APL-0.1.Bro OR SUL-1.0 AND PolyForm-Noncommercial-1.0.0
+// @license         LicenseRef-APL-Bro-0.1 OR SUL-1.0 AND PolyForm-Noncommercial-1.0.0
 // @website         https://github.com/ucxn/ZTE-Stat_Max
 // @supportURL      https://b23.tv/BV1PtR7B8ECC
 // @run-at          document-start
