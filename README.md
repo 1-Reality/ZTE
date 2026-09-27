@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/badge/version-5.9.9.Z-orange.svg?logo=github&logoColor=white)](https://github.com/ucxn/ZTE-Stat_Max)&emsp;&nbsp;
 [![Platform](https://img.shields.io/badge/platform-Web-green.svg?logo=javascript&logoColor=white)](https://scriptcat.org/zh-CN)&nbsp;&emsp;
 [![Integration](https://img.shields.io/badge/集成-Home_Assistant-41BDF5.svg?logo=homeassistant&logoColor=white)](https://github.com/ucxn/ZTE-Stat_HA)&nbsp;&emsp;
-[![APL](https://img.shields.io/badge/APL-Source-3DA639?logo=opensourceinitiative&logoColor=white&labelColor=222222)](https://raw.githubusercontent.com/ucxn/ZTE-Stat_Max/refs/heads/main/LICENSE/license.txt)&nbsp;&emsp;
+[![APL](https://img.shields.io/badge/Source-APL_0.1_Bro-3DA639?logo=opensourceinitiative&logoColor=white&labelColor=222222)](https://raw.githubusercontent.com/ucxn/ZTE-Stat_Max/refs/heads/main/LICENSE/license.txt)&nbsp;&emsp;
 [![License: SUL-1.0](https://img.shields.io/badge/SUL-1.0-EA4B71.svg?logo=n8n&logoColor=white&labelColor=040506)](https://github.com/ucxn/ZTE-Stat_Max/blob/main/LICENSE/SUL-1.0.md)&nbsp;&emsp;
 [![PolyForm Noncommercial 1.0.0](./assets/nc_custom_noversion.svg)](https://github.com/ucxn/ZTE-Stat_Max/blob/main/LICENSE/PolyForm-Noncommercial-1.0.0.md)
 
@@ -40,9 +40,10 @@
 * **异常上传监控**：支持检测上下行比例，直观标记异常上传，打击 PCDN / P2P 偷跑上行。
 * **精准单位换算**：严格区分网络传输速率与存储容量，支持 1000/1024 双进制，支持 Mbps / GiB 显示。
 * **全局数据对比**：支持内网（局域网代数和）与公网（WAN口）数据大盘统计与直观对比。
-* **高精积分流量统计 ⏱️  UI 栅格重构 🖥️**：完美支持手机端
+* **高精流量统计 ⏱️  UI 栅格重构 🖥️**：完美支持手机端
 
-* **双轨制流量统计对比**：除展示路由器接口自带的历史总吞吐量外，还会在页面前端独立进行高频的数据采样，统计设备在当前页面打开期间的真实流量消耗。两者并排显示，互为参考。单位统一成本次，注重变化的观察。
+* **事件驱动和组时间**：当上下行任意方向速度变化瞬间，认定为新采样，避免错误的读到缓存值。此举有效缓解了不同接口刷新时间不同，更是解决了当轮询频率高于刷新频率时，越高频、越不准的谬误；此外，Group Time 机制使得网速上下帧撞车的概率大大降低。
+* **双轨制流量统计对比**：除展示路由器接口自带的历史总吞吐量外，还会在页面前端独立进行高频的数据采样，统计设备在当前页面打开期间的真实流量消耗。两者并排显示，互为参考。单位统一成本次，注重变化的观察。特别说明：这里的高精流量源自于官方的逐 Mac 累计计数器，用于统计每台设备的流量，但是校准了官方的回流、归零等问题，有别于 APP 周报，区分了上下行。前端是为了避免抽风时，连个大概的流量数据都看不了而进行的独立参照，微积分频率本身并不影响“高精”数值。
 * **自定义支持**：尊重网络工程习惯，支持通过脚本变量自定义 1000 进制 Mbps、1024 进制 MiB/s 显示逻辑。
 * **🛡️ 隐私保护、UI 优化**：
   * DOM 原地突变（Mutation）渲染时，自动覆写敏感的 MAC 地址与 IPv6 临时地址，确保在录屏、截屏及分享网络状态时的安全。
@@ -96,7 +97,7 @@
 
 ## ℹ️ 程序术语
 #### 模式名称
-A模式：依托于官方页面的 `组网管理`，B1模式：主线，自建 `哥哥科技面板`，B2：和B1无缝自动切换，主要针对隐藏Mesh等设备逐个发`小包`；A到B的切换不可逆：主要也是为了保证统计时间频率口径的一致性。
+A模式：依托于官方页面的 `组网管理`，B1模式：主线，自建 `哥哥科技面板`，B2：和B1无缝自动切换，主要针对隐藏Mesh等设备逐个发`小包`；A到B的切换不可逆：主要也是为了保证统计时间频率口径的一致性。详见：**[名词解释](中兴名词对照表.md)**.
 #### 名词解释
 关于请求的API接口，架构的描述等详见**程序说明书**：设计意图、词汇对照表、接口解释，“看不懂的地方”，大多可在这里寻求答案：[发展史故事](发展史故事.md).
 

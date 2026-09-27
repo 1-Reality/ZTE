@@ -2,6 +2,8 @@
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>
 
+# Copyright © 2026 哥哥科技
+
 ## Acceptance
 
 In order to get any license under these terms, you must agree
@@ -29,13 +31,14 @@ License](#changes-and-new-works-license).
 
 ## Notices
 
-You must ensure that anyone who gets a copy of any part of
+You MUST ensure that anyone who gets a copy of any part of
 the software from you also gets a copy of these terms or the
 URL for them above, as well as copies of any plain-text lines
 beginning with `Required Notice:` that the licensor provided
-with the software.  For example:
+with the software.
 
-> Required Notice: Copyright 哥哥科技, Bro-Tech. (ucxn/ZTE-Stat_Max)[https://github.com/ucxn/ZTE-Stat_Max]
+> Required Legal Notice: Copyright 哥哥科技, Bro-Tech. &nbsp;
+[github.com/ucxn/ZTE-Stat_Max](https://github.com/ucxn/ZTE-Stat_Max)
 
 ## Changes and New Works License
 

@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-Web-green.svg?logo=javascript&logoColor=white)](https://scriptcat.org/zh-CN)&nbsp;&emsp;
 [![Integration](https://img.shields.io/badge/集成-Home_Assistant-41BDF5.svg?logo=homeassistant&logoColor=white)](https://github.com/ucxn/ZTE-Stat_HA)
 
-[![APL](https://img.shields.io/badge/APL--Source-3DA639?logo=opensourceinitiative&logoColor=white&labelColor=222222)](https://raw.githubusercontent.com/ucxn/ZTE-Stat_Max/refs/heads/main/LICENSE/license.txt)&nbsp;&emsp;
+[![APL](https://img.shields.io/badge/Source-APL_0.1_Bro-3DA639?logo=opensourceinitiative&logoColor=white&labelColor=222222)](https://raw.githubusercontent.com/ucxn/ZTE-Stat_Max/refs/heads/main/LICENSE/license.txt)&nbsp;&emsp;
 [![License: SUL-1.0](https://img.shields.io/badge/SUL-1.0-EA4B71.svg?logo=n8n&logoColor=white&labelColor=040506)](https://github.com/ucxn/ZTE-Stat_Max/raw/refs/heads/main/LICENSE/SUL-1.0.md)&nbsp;&emsp;
 [![PolyForm Noncommercial 1.0.0](./assets/nc_custom_noversion.svg)](https://github.com/ucxn/ZTE-Stat_Max/blob/main/LICENSE/PolyForm-Noncommercial-1.0.0.md)
 
@@ -48,7 +48,9 @@ While the official Web dashboard is stable, its UX design for data visualization
 * **Precise Unit Conversion**: Strictly differentiates between network transmission rates and storage capacity. Supports both 1000/1024 base systems and displays in Mbps / GiB.
 * **Global Data Comparison**: Supports aggregate statistics and intuitive comparison between the internal network (LAN algebraic sum) and the public network (WAN port).
 * **High-Precision Integral Traffic Tracking ⏱️ & UI Grid Refactoring 🖥️**：Fully mobile-friendly
-* **Dual-Track Traffic Comparison**: In addition to displaying the historical total throughput natively provided by the router interface, the frontend independently conducts high-frequency data sampling to track the actual traffic consumed while the page is open. Both metrics are displayed side-by-side for reference. Units are unified to the current session, focusing on the observability of changes.
+* **Dual-Track Traffic Comparison**: In addition to displaying the historical total throughput natively provided by the router interface, the frontend independently conducts high-frequency data sampling to track the actual traffic consumed while the page is open. Both metrics are displayed side-by-side for reference. Units are unified to the current session, focusing on the observability of changes. Special Note: The “high-precision” traffic data here is derived from the official per-MAC cumulative counter, which tracks traffic for each device. However, it has been calibrated to account for issues such as official data rollover and reset, and—unlike the app’s weekly reports—distinguishes between upload and download traffic. The front-end sampling serves as an independent reference to ensure that even during system glitches, users can still view approximate traffic data; the sampling frequency itself does not affect the “high-precision” values.
+
+* **Event-Driven and Group Time**: A new sample is recorded the moment the speed changes in either the upstream or downstream direction, preventing the erroneous reading of cached values. This approach effectively mitigates the issue of varying refresh times across different interfaces and resolves the fallacy that higher polling frequencies lead to less accurate readings when the polling frequency exceeds the refresh frequency. Additionally, the Group Time mechanism significantly reduces the probability of upstream and downstream frame collisions.
 * **Customization Support**: Respects network engineering habits by allowing script variables to customize display logic for Base-1000 (Mbps) and Base-1024 (MiB/s).
 * **🛡️ Privacy Protection & UI Optimization**:
   * Automatically masks sensitive MAC addresses and temporary IPv6 addresses during in-place DOM mutation rendering, ensuring safety when screen recording, capturing, or sharing network status.
