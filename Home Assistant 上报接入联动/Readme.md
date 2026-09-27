@@ -1,6 +1,6 @@
 # ZTE-Stat_HA by 哥哥科技（GBNPA Router Sync）
 
-[English](https://github.com/ucxn/ZTE-Stat_Max/blob/main/README_EN.md) | **简体中文**
+[English](./集成版/gbnpa_router/Readme.md) | **简体中文**
 
 *ZTE-Stat_Max* & *GBNPA-Router-Sync* 是由 **哥哥科技** 开发的一套网络数据遥测与多端转发解决方案。
 
